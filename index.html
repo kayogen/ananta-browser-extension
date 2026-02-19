@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ananta</title>
+
+    <!-- Foundation -->
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/animations.css" />
+
+    <!-- Widgets -->
+    <link rel="stylesheet" href="css/widgets.css" />
+    <link rel="stylesheet" href="css/spotlight.css" />
+    <link rel="stylesheet" href="css/launchpad.css" />
+    <link rel="stylesheet" href="css/bookmarks.css" />
+    <link rel="stylesheet" href="css/worldClocks.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- ══════════════════════════════════════════════════
+           TOP BAR — Spotlight search (10vh)
+      ══════════════════════════════════════════════════ -->
+      <header id="topBar" aria-label="Search">
+        <!-- Spotlight trigger bar -->
+        <div
+          id="spotlightBar"
+          class="spotlight-bar glass spring-gpu"
+          role="button"
+          tabindex="0"
+          aria-label="Search history, bookmarks and sites · ⌘K"
+          aria-haspopup="dialog"
+        >
+          <svg
+            class="spotlight-bar-icon"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span class="spotlight-bar-placeholder"
+            >Search history, bookmarks and sites…</span
+          >
+          <kbd class="spotlight-bar-kbd" aria-hidden="true">⌘K</kbd>
+        </div>
+
+        <!-- Spotlight overlay (full-screen modal) -->
+        <div
+          id="spotlightOverlay"
+          class="spotlight-overlay"
+          aria-hidden="true"
+          role="dialog"
+          aria-label="Search"
+          aria-modal="true"
+        >
+          <div id="spotlightBackdrop" class="spotlight-backdrop"></div>
+          <div id="spotlightPanel" class="spotlight-panel glass spring-gpu">
+            <div class="spotlight-input-row">
+              <svg
+                class="spotlight-icon"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              <input
+                type="search"
+                id="spotlightInput"
+                class="spotlight-input"
+                placeholder="Search history, bookmarks, sites…"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Search"
+                aria-autocomplete="list"
+                aria-controls="spotlightResults"
+              />
+              <kbd class="spotlight-esc" aria-hidden="true">esc</kbd>
+            </div>
+            <div
+              id="spotlightResults"
+              class="spotlight-results"
+              role="listbox"
+              aria-label="Search results"
+            ></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ══════════════════════════════════════════════════
+           BOTTOM AREA — 90vh: left clocks (25%) + right content (75%)
+      ══════════════════════════════════════════════════ -->
+      <div id="bottomArea">
+        <!-- ── LEFT PANEL (25%) — World clocks ───────────────────────────── -->
+        <aside id="leftPanel" aria-label="World clocks">
+          <!-- Hero clock (local) -->
+          <div id="heroTimeline" class="spring-appear-up">
+            <div class="hero-card">
+              <div class="hero-meta">
+                <div class="hero-location">
+                  <span id="heroCity" class="hero-city"></span>
+                  <span id="heroCountry" class="hero-country"></span>
+                </div>
+                <span id="heroDate" class="hero-date"></span>
+              </div>
+              <div
+                id="heroTime"
+                class="hero-time"
+                aria-live="polite"
+                aria-label="Current time"
+              ></div>
+              <div class="hero-footer">
+                <span id="heroGreeting" class="hero-greeting"></span>
+                <div class="hero-fmt" role="group" aria-label="Time format">
+                  <button class="hero-fmt-btn" data-fmt="12">12h</button>
+                  <button class="hero-fmt-btn" data-fmt="24">24h</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- World clock controls (edit toggle + add city) —
+               rendered empty; worldClocks.js populates SVG icons -->
+          <div id="wcControls" role="toolbar" aria-label="World clock controls">
+            <button
+              id="wcAddBtn"
+              class="wc-add-btn"
+              aria-label="Add city"
+              aria-hidden="true"
+              tabindex="-1"
+            ></button>
+            <button
+              id="wcGearBtn"
+              class="wc-gear-btn"
+              aria-label="Edit world clocks"
+              title="Edit"
+            ></button>
+          </div>
+
+          <!-- World clock cards rendered dynamically by worldClocks.js -->
+          <div id="worldClocks" aria-label="World time" role="list"></div>
+        </aside>
+
+        <!-- ── RIGHT PANEL (75%) — Sites + Bookmarks ─────────────────── -->
+        <main id="rightPanel">
+          <!-- Favourite Sites (Launchpad) -->
+          <section id="topSitesArea" aria-labelledby="lp-heading">
+            <div
+              id="launchpadGrid"
+              class="launchpad-grid"
+              role="list"
+              aria-label="Most visited sites"
+            >
+              <!-- skeleton items sit directly in the grid (10 cells = 1 row) -->
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+              <div class="lp-skeleton-item skeleton" aria-hidden="true"></div>
+            </div>
+          </section>
+
+          <!-- Bookmarks (VS Code explorer style) -->
+          <section id="bookmarksSection" aria-labelledby="bm-heading">
+            <div class="bm-header-row">
+              <!-- <h2 id="bm-heading" class="section-label">Bookmarks</h2> -->
+              <!-- Folder tabs injected by bookmarks.js -->
+              <div
+                id="bmFolderTabs"
+                class="bm-folder-tabs"
+                role="tablist"
+                aria-label="Bookmark folders"
+              ></div>
+            </div>
+            <!-- Tree injected by bookmarks.js -->
+            <div
+              id="bmTree"
+              class="bm-tree-container"
+              role="tree"
+              aria-label="Bookmarks"
+            ></div>
+          </section>
+        </main>
+      </div>
+      <!-- #bottomArea -->
+    </div>
+    <!-- #app -->
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         SCRIPTS — load order matters (globals chain)
+    ═══════════════════════════════════════════════════════════════ -->
+    <script src="js/utils.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/icons.js"></script>
+    <script src="js/search.js"></script>
+    <script src="js/clocks.js"></script>
+    <script src="js/worldClockTime.js"></script>
+    <script src="js/worldClocks.js"></script>
+    <script src="js/worldClockModal.js"></script>
+    <script src="js/spotlight.js"></script>
+    <script src="js/topsites.js"></script>
+    <script src="js/bookmarks.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>

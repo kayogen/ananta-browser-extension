@@ -1,0 +1,221 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   widgets.css — Hero clock card + world clock grid
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HERO CLOCK CARD
+───────────────────────────────────────────────────────────────────────── */
+
+#heroTimeline {
+  width: 100%;
+  flex-shrink: 0;
+  margin-bottom: var(--sp-3);
+}
+
+.hero-card {
+  width: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-xl);
+  padding: var(--sp-5) var(--sp-4) var(--sp-4);
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 4px 24px rgba(0, 122, 255, 0.28),
+    0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+/* Subtle gradient shimmer overlay */
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.04) 60%,
+    rgba(0, 0, 0, 0.08) 100%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+/* Top row: location (left) + date (right) */
+.hero-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
+}
+
+.hero-location {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hero-city {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.hero-country {
+  font-size: 10px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.hero-date {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-align: right;
+  line-height: 1.3;
+}
+
+/* Large time display */
+.hero-time {
+  font-size: clamp(38px, 3.4vw, 54px);
+  font-weight: 200;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: var(--sp-4);
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.18);
+}
+
+/* Bottom row: greeting (left) + 12h/24h toggle (right) */
+.hero-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.hero-greeting {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: -0.005em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 12h / 24h pill toggle */
+.hero-fmt {
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-full);
+  padding: 2px;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.hero-fmt-btn {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.hero-fmt-btn.is-active {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-accent);
+}
+
+/* Dark mode: hero keeps the same accent color, but check if accent needs flip */
+@media (prefers-color-scheme: dark) {
+  .hero-card {
+    box-shadow:
+      0 4px 28px rgba(10, 132, 255, 0.35),
+      0 1px 4px rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   WORLD CLOCK GRID
+   Inner card structure (header/body/footer) is handled by worldClocks.css
+───────────────────────────────────────────────────────────────────────── */
+
+#worldClocks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-2);
+  width: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: var(--sp-2);
+  transition: opacity 150ms var(--ease-out);
+}
+
+#worldClocks::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Base card shell ──────────────────────────────────────────────────────── */
+.world-clock {
+  display: flex;
+  flex-direction: column;
+  position: relative; /* anchor for .wc-minus-single overlay */
+  padding: var(--sp-3);
+  border-radius: var(--radius-xl);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-xs, 0 1px 4px rgba(0, 0, 0, 0.07));
+  min-height: 110px;
+  cursor: default;
+  user-select: none;
+  overflow: visible; /* allow minus badge to overhang */
+  transition:
+    background var(--dur-normal) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+  gap: var(--sp-1);
+}
+
+.world-clock:hover:not(.is-edit) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Night card — forced dark surface */
+.world-clock.is-night {
+  background: rgba(10, 10, 16, 0.92);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .hero-time {
+    font-size: clamp(30px, 5vw, 46px);
+  }
+}

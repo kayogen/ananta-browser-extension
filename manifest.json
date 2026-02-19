@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Ananta",
+  "version": "1.0.0",
+  "description": "A beautiful, privacy-first new tab page with bookmarks, top sites, and history.",
+  "author": "KayoGen",
+
+  "permissions": ["bookmarks", "history", "topSites", "sessions"],
+
+  "host_permissions": [],
+
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ananta@kayogen",
+      "strict_min_version": "109.0"
+    }
+  },
+
+  "icons": {
+    "16": "assets/icons/icon16.svg",
+    "32": "assets/icons/icon32.svg",
+    "48": "assets/icons/icon48.svg",
+    "128": "assets/icons/icon128.svg"
+  },
+
+  "action": {
+    "default_title": "Ananta New Tab",
+    "default_icon": {
+      "16": "assets/icons/icon16.svg",
+      "48": "assets/icons/icon48.svg",
+      "128": "assets/icons/icon128.svg"
+    }
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob:; style-src 'self'; font-src 'self'; script-src 'self'"
+  }
+}

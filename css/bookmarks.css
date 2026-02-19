@@ -1,0 +1,299 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   bookmarks.css — VS Code Explorer-style bookmark tree for Ananta
+   Layout: horizontal folder tabs + collapsible tree rows
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Bookmarks section container ─────────────────────────────────────────── */
+#bookmarksSection {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Header row: section label + folder tabs ─────────────────────────────── */
+.bm-header-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-2);
+  flex-shrink: 0;
+}
+
+.bm-header-row .section-label {
+  margin-bottom: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Folder tabs (horizontal pill row) ──────────────────────────────────── */
+.bm-folder-tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--sp-1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  min-width: 0;
+}
+
+.bm-folder-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Expanded state: all tabs wrap to multiple lines */
+.bm-folder-tabs.is-expanded {
+  flex-wrap: wrap;
+  row-gap: var(--sp-1);
+}
+
+/* ── Tabs expand / collapse toggle button ─────────────────────────────── */
+.bm-tabs-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    transform var(--spring-press-dur) var(--spring-decelerate);
+  transform: translateZ(0);
+}
+
+.bm-tabs-toggle:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+.bm-tabs-toggle:active {
+  transform: translateZ(0) scale(0.9);
+}
+
+.bm-tabs-toggle svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+  pointer-events: none;
+}
+
+.bm-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 3px var(--sp-3);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transform: translateZ(0);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    transform var(--dur-normal) var(--ease-out);
+  will-change: transform;
+}
+
+.bm-tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+  transform: translateZ(0) scale(1.03);
+}
+
+.bm-tab:active {
+  transform: translateZ(0) scale(0.97);
+  transition-duration: var(--spring-press-dur);
+}
+
+.bm-tab.is-active {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-color: rgba(0, 122, 255, 0.25);
+  font-weight: 600;
+}
+
+.bm-tab-icon {
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+/* ── Tree container ─────────────────────────────────────────────────────── */
+.bm-tree-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: var(--sp-1);
+}
+
+/* ── Root UL ─────────────────────────────────────────────────────────────── */
+ul.bm-tree,
+ul.bm-subtree {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+ul.bm-subtree {
+  /* Height animation is driven by JS spring via max-height */
+  overflow: hidden;
+}
+
+/* ── Tree item base ─────────────────────────────────────────────────────── */
+.bm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 4px var(--sp-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  color: var(--color-text-primary);
+  transition:
+    background var(--dur-fast) var(--spring-decelerate),
+    transform var(--dur-normal) var(--spring-decelerate);
+  transform: translateZ(0);
+  will-change: transform;
+  min-width: 0;
+}
+
+.bm-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.bm-row:active {
+  background: var(--color-surface-pressed);
+  transform: translateZ(0) scale(0.99);
+}
+
+/* ── Indent levels — set via `style="--depth:N"` ────────────────────────── */
+.bm-row {
+  padding-left: calc(var(--sp-2) + var(--depth, 0) * 16px);
+}
+
+/* ── Chevron (folder expand indicator) ──────────────────────────────────── */
+.bm-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  transform: translateZ(0) rotate(0deg);
+  transition: transform 200ms var(--spring-decelerate);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.bm-chevron.is-open {
+  transform: translateZ(0) rotate(90deg);
+  color: var(--color-text-secondary);
+}
+
+.bm-chevron svg {
+  width: 10px;
+  height: 10px;
+  display: block;
+}
+
+/* ── Folder icon ──────────────────────────────────────────────────────────── */
+.bm-folder-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-accent);
+  font-size: 13px;
+  width: 16px;
+  text-align: center;
+}
+
+/* ── Bookmark favicon ─────────────────────────────────────────────────────── */
+.bm-favicon {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Label text ──────────────────────────────────────────────────────────── */
+.bm-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.bm-folder-row .bm-label {
+  font-weight: 500;
+}
+
+/* ── Individual bookmark link ────────────────────────────────────────────── */
+.bm-item-link {
+  display: contents; /* row is the clickable element */
+}
+
+/* ── Count badge (folder children count) ────────────────────────────────── */
+.bm-count {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 1px 5px;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+.bm-empty {
+  padding: var(--sp-6) var(--sp-4);
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* ── Skeleton rows ───────────────────────────────────────────────────────── */
+.bm-skeleton-row {
+  height: 24px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+}
+
+/* ── Highlight (search) ──────────────────────────────────────────────────── */
+.bm-label mark.highlight {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ── Dark mode adjustments ───────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  .bm-tab.is-active {
+    border-color: rgba(10, 132, 255, 0.3);
+  }
+  .bm-folder-icon {
+    color: var(--color-accent);
+  }
+}

@@ -1,0 +1,239 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   finder.css — Finder column-view bookmark browser
+   macOS Finder column view (Miller Columns) aesthetic
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Section wrapper ────────────────────────────────────────────────────── */
+#finderSection {
+  width: 100%;
+}
+
+/* ── Finder chrome (the entire "Finder window") ─────────────────────────── */
+.finder-chrome {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Finder titlebar (traffic lights) ──────────────────────────────────── */
+.finder-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-5);
+  background: rgba(0, 0, 0, 0.04);
+  border-bottom: 1px solid var(--color-separator);
+  flex-shrink: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  .finder-toolbar {
+    background: rgba(255, 255, 255, 0.03);
+  }
+}
+
+/* ── Traffic light dots ─────────────────────────────────────────────────── */
+.finder-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.finder-dot-red {
+  background: #ff5f57;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.15);
+}
+
+.finder-dot-yellow {
+  background: #febc2e;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+
+.finder-dot-green {
+  background: #28c840;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12);
+}
+
+.finder-toolbar-title {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  letter-spacing: -0.01em;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Column strip ───────────────────────────────────────────────────────── */
+.finder-columns {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex: 1;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+}
+
+.finder-columns::-webkit-scrollbar {
+  height: 0;
+}
+
+/* ── Single column panel ────────────────────────────────────────────────── */
+.finder-column {
+  width: 220px;
+  min-width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-separator);
+  overflow-y: auto;
+  max-height: 320px;
+  padding: var(--sp-2) 0;
+  scroll-snap-align: start;
+
+  /* Slide in from right */
+  animation: col-slide-in var(--dur-normal) var(--ease-decelerate) both;
+}
+
+@keyframes col-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.finder-column:last-child {
+  border-right: none;
+  min-width: 240px;
+}
+
+/* ── Column item (folder or bookmark) ──────────────────────────────────── */
+.finder-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-4);
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--color-text-primary);
+  border-radius: 0;
+  transition: background var(--dur-fast) var(--ease-out);
+  position: relative;
+  min-height: 32px;
+  user-select: none;
+}
+
+.finder-item:hover {
+  background: var(--color-accent-bg);
+}
+
+.finder-item.is-selected {
+  background: var(--color-accent);
+}
+
+.finder-item.is-selected * {
+  color: #ffffff !important;
+}
+
+.finder-item.is-selected .finder-chevron {
+  opacity: 1;
+}
+
+/* ── Item icon ──────────────────────────────────────────────────────────── */
+.finder-item-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.finder-item-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.finder-favicon {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  display: block;
+}
+
+/* ── Item label ─────────────────────────────────────────────────────────── */
+.finder-item-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  letter-spacing: -0.005em;
+}
+
+/* ── Chevron (folder indicator) ─────────────────────────────────────────── */
+.finder-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  opacity: 0.6;
+}
+
+/* ── Skeleton placeholders ──────────────────────────────────────────────── */
+.finder-column .finder-skeleton {
+  height: 28px;
+  margin: 4px var(--sp-4);
+  border-radius: var(--radius-xs);
+}
+
+.finder-skeleton.short {
+  width: 55%;
+}
+
+.finder-skeleton.medium {
+  width: 75%;
+}
+
+/* ── Empty column state ─────────────────────────────────────────────────── */
+.finder-empty {
+  padding: var(--sp-6) var(--sp-4);
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .finder-column {
+    width: 190px;
+    min-width: 190px;
+    max-height: 280px;
+  }
+}
+
+@media (max-width: 480px) {
+  .finder-chrome {
+    min-height: 200px;
+  }
+
+  .finder-column {
+    width: 170px;
+    min-width: 170px;
+    max-height: 240px;
+  }
+
+  .finder-item {
+    padding: var(--sp-2) var(--sp-3);
+  }
+}

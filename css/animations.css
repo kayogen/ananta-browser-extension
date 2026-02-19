@@ -1,0 +1,191 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   animations.css — Physics-based animation classes for Ananta
+   All transitions use spring-tuned cubic-bezier curves.
+   GPU-only properties: transform and opacity exclusively.
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Spring easing definitions ──────────────────────────────────────────── */
+:root {
+  --spring-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1); /* springy, bouncy */
+  --spring-decelerate: cubic-bezier(0.22, 1, 0.36, 1); /* ease-out spring */
+  --spring-snappy: cubic-bezier(0.4, 0, 0.2, 1); /* material standard */
+  --spring-enter-dur: 320ms;
+  --spring-exit-dur: 200ms;
+  --spring-hover-dur: 220ms;
+  --spring-press-dur: 90ms;
+}
+
+/* ── GPU hint: applied to all animated elements ─────────────────────────── */
+.spring-gpu {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+/* ── spring-appear: scale + fade in on mount ─────────────────────────────
+   Use via JS: el.classList.add('spring-appear')
+   Remove after duration for memory savings.                               */
+@keyframes spring-appear {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+.spring-appear {
+  animation: spring-appear var(--spring-enter-dur) var(--spring-decelerate) both;
+  transform: translateZ(0);
+}
+
+/* ── spring-appear-up: slide up + fade ──────────────────────────────────── */
+@keyframes spring-appear-up {
+  from {
+    opacity: 0;
+    transform: translateZ(0) translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) translateY(0) scale(1);
+  }
+}
+
+.spring-appear-up {
+  animation: spring-appear-up var(--spring-enter-dur) var(--spring-decelerate)
+    both;
+  transform: translateZ(0);
+}
+
+/* ── spring-appear-down: slide down + fade (for dropdowns) ────────────── */
+@keyframes spring-appear-down {
+  from {
+    opacity: 0;
+    transform: translateZ(0) translateY(-8px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) translateY(0) scale(1);
+  }
+}
+
+.spring-appear-down {
+  animation: spring-appear-down var(--spring-enter-dur) var(--spring-decelerate)
+    both;
+  transform: translateZ(0);
+}
+
+/* ── Stagger helper — set via --delay custom property ───────────────────── */
+.spring-stagger {
+  animation-delay: var(--delay, 0ms);
+}
+
+/* ── spring-lift: hover float effect ─────────────────────────────────────
+   Add to elements that should float on hover.                             */
+.spring-lift {
+  transform: translateZ(0);
+  transition:
+    transform var(--spring-hover-dur) var(--spring-decelerate),
+    box-shadow var(--spring-hover-dur) var(--spring-decelerate);
+  will-change: transform, box-shadow;
+}
+
+.spring-lift:hover {
+  transform: translateZ(0) translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── spring-press: click depression ─────────────────────────────────────── */
+.spring-press {
+  transform: translateZ(0);
+  transition: transform var(--spring-press-dur) var(--spring-snappy);
+  will-change: transform;
+}
+
+.spring-press:active {
+  transform: translateZ(0) scale(0.965);
+}
+
+/* ── spring-lift-press: combined hover + press (used on icons) ──────────── */
+.spring-lift-press {
+  transform: translateZ(0);
+  transition:
+    transform var(--spring-hover-dur) var(--spring-decelerate),
+    box-shadow var(--spring-hover-dur) var(--spring-decelerate);
+  will-change: transform, box-shadow;
+  cursor: pointer;
+}
+
+.spring-lift-press:hover {
+  transform: translateZ(0) translateY(-3px) scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.spring-lift-press:active {
+  transform: translateZ(0) scale(0.96);
+  transition-duration: var(--spring-press-dur);
+}
+
+/* ── spring-fade-in: opacity only ───────────────────────────────────────── */
+@keyframes spring-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.spring-fade-in {
+  animation: spring-fade var(--spring-enter-dur) var(--spring-decelerate) both;
+}
+
+/* ── Chevron rotation (bookmark tree) ──────────────────────────────────── */
+.spring-chevron {
+  display: inline-block;
+  transform: translateZ(0) rotate(0deg);
+  transition: transform 200ms var(--spring-decelerate);
+  transform-origin: center;
+  will-change: transform;
+}
+
+.spring-chevron.is-open {
+  transform: translateZ(0) rotate(90deg);
+}
+
+/* ── Scale-in (context menus, tooltips) ─────────────────────────────────── */
+@keyframes spring-scale-in {
+  from {
+    opacity: 0;
+    transform: translateZ(0) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translateZ(0) scale(1);
+  }
+}
+
+.spring-scale-in {
+  animation: spring-scale-in 240ms var(--spring-overshoot) both;
+  transform-origin: top center;
+}
+
+/* ── Shimmer skeleton override (spring pulse) ────────────────────────────── */
+@keyframes spring-skeleton {
+  0% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0.35;
+  }
+}
+
+.skeleton {
+  animation: spring-skeleton 1.8s var(--spring-snappy) infinite !important;
+}
