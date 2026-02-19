@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# ══════════════════════════════════════════════════════════════════════════════
+#  publish-firefox
+#  Creates a Firefox AMO-ready zip for the Ananta browser extension.
+#
+#  Pure shell — uses only macOS built-ins: bash, grep, sed, zip.
+#  No Python, Node.js, or npm required.
+#
+#  Usage:
+#    ./publish-firefox
+#
+#  Output:
+#    dist/ananta-firefox-v<version>.zip
+# ══════════════════════════════════════════════════════════════════════════════
+
+set -euo pipefail
+
+# ── Colours ───────────────────────────────────────────────────────────────────
+RED='\033[0;31m'; GREEN='\033[0;32m'; CYAN='\033[0;36m'
+BOLD='\033[1m'; RESET='\033[0m'
+
+ok()   { echo -e "  ${GREEN}✓${RESET}  $*"; }
+info() { echo -e "${CYAN}${BOLD}▶${RESET}  $*"; }
+die()  { echo -e "\n${RED}${BOLD}✗  ERROR:${RESET}  $*\n"; exit 1; }
+
+# ── Resolve paths ─────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$SCRIPT_DIR"
+MANIFEST="$ROOT/manifest.json"
+DIST="$ROOT/dist"
+PNG_DIR="$ROOT/assets/icons/png"
+
+# ── Pre-flight checks ─────────────────────────────────────────────────────────
+[[ -f "$MANIFEST" ]] || die "manifest.json not found at $ROOT"
+command -v zip &>/dev/null || die "zip not found — install via: xcode-select --install"
+
+# Verify PNG icons exist (run gen-icons.js first if missing)
+for SIZE in 16 32 48 128; do
+  [[ -f "$PNG_DIR/icon${SIZE}.png" ]] || \
+    die "Missing assets/icons/png/icon${SIZE}.png — run:  node scripts/gen-icons.js"
+done
+
+# ── Read fields from manifest using grep + sed (no Python/Node needed) ────────
+# Extracts the value of a top-level "key": "value" JSON string field
+json_str() {
+  grep -m1 "\"$1\"" "$MANIFEST" \
+    | sed 's/.*"'"$1"'"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/'
+}
+
+VERSION=$(json_str version)
+NAME=$(json_str name)
+DESCRIPTION=$(json_str description)
+AUTHOR=$(json_str author)
+
+[[ -n "$VERSION" ]]     || die "Could not read 'version' from manifest.json"
+[[ -n "$NAME" ]]        || die "Could not read 'name' from manifest.json"
+[[ -n "$DESCRIPTION" ]] || die "Could not read 'description' from manifest.json"
+
+# ── Staging area ──────────────────────────────────────────────────────────────
+STAGE=$(mktemp -d)
+trap 'rm -rf "$STAGE"' EXIT
+
+OUT_ZIP="$DIST/ananta-firefox-v${VERSION}.zip"
+
+echo ""
+info "Building Firefox package  (v${VERSION})"
+echo ""
+
+# ── Copy extension files ──────────────────────────────────────────────────────
+for ITEM in index.html css js assets; do
+  SRC="$ROOT/$ITEM"
+  [[ -e "$SRC" ]] || die "Source not found: $ITEM"
+  cp -R "$SRC" "$STAGE/$ITEM"
+  ok "Copied  $ITEM"
+done
+
+# ── Write Firefox-specific manifest (pure shell heredoc) ──────────────────────
+cat > "$STAGE/manifest.json" <<MANIFEST_EOF
+{
+  "manifest_version": 3,
+  "name": "$NAME",
+  "version": "$VERSION",
+  "description": "$DESCRIPTION",
+  "author": "$AUTHOR",
+
+  "permissions": ["bookmarks", "history", "topSites", "sessions", "storage"],
+
+  "host_permissions": ["https://nominatim.openstreetmap.org/*"],
+
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ananta@kayogen",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": ["none"],
+        "optional": []
+      }
+    }
+  },
+
+  "icons": {
+    "16":  "assets/icons/png/icon16.png",
+    "32":  "assets/icons/png/icon32.png",
+    "48":  "assets/icons/png/icon48.png",
+    "128": "assets/icons/png/icon128.png"
+  },
+
+  "action": {
+    "default_title": "Ananta New Tab",
+    "default_icon": {
+      "16":  "assets/icons/png/icon16.png",
+      "48":  "assets/icons/png/icon48.png",
+      "128": "assets/icons/png/icon128.png"
+    }
+  },
+
+  "content_security_policy": {
+    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src https://nominatim.openstreetmap.org"
+  }
+}
+MANIFEST_EOF
+
+ok "Wrote   Firefox manifest.json"
+
+# ── Zip (relative paths, no __MACOSX junk) ───────────────────────────────────
+mkdir -p "$DIST"
+rm -f "$OUT_ZIP"
+
+(
+  cd "$STAGE"
+  zip -qr "$OUT_ZIP" . \
+    --exclude "*.DS_Store" \
+    --exclude "__MACOSX/*"
+)
+
+ok "Zipped  $(basename "$OUT_ZIP")"
+
+# ── Done ──────────────────────────────────────────────────────────────────────
+ZIP_SIZE=$(du -sh "$OUT_ZIP" | cut -f1)
+echo ""
+echo -e "${GREEN}${BOLD}✅  Done!${RESET}"
+echo ""
+echo -e "   File  : ${BOLD}$OUT_ZIP${RESET}"
+echo -e "   Size  : ${ZIP_SIZE}"
+echo ""
+echo -e "   Upload at → ${CYAN}https://addons.mozilla.org/developers/${RESET}"
+echo ""

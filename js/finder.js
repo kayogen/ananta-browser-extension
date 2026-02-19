@@ -104,7 +104,7 @@ function _buildColumn(nodes, depth) {
 
     if (isFolder) {
       iconWrap.style.color = _colorForString(node.title || node.id);
-      iconWrap.innerHTML = SVG_FOLDER;
+      setSvg(iconWrap, SVG_FOLDER);
     } else {
       // Favicon
       const faviconSrc = getFavicon(node.url, 28);
@@ -121,7 +121,7 @@ function _buildColumn(nodes, depth) {
         };
         iconWrap.appendChild(img);
       } else {
-        iconWrap.innerHTML = SVG_BOOKMARK;
+        setSvg(iconWrap, SVG_BOOKMARK);
         iconWrap.style.color = "var(--color-text-tertiary)";
       }
     }
@@ -138,7 +138,7 @@ function _buildColumn(nodes, depth) {
     if (isFolder) {
       const chev = document.createElement("div");
       chev.className = "finder-chevron";
-      chev.innerHTML = SVG_CHEVRON;
+      setSvg(chev, SVG_CHEVRON);
       item.appendChild(chev);
     }
 
@@ -192,7 +192,7 @@ function _createBookmarkIcon() {
   const el = document.createElement("div");
   el.className = "finder-item-icon";
   el.style.color = "var(--color-text-tertiary)";
-  el.innerHTML = SVG_BOOKMARK;
+  setSvg(el, SVG_BOOKMARK);
   return el;
 }
 

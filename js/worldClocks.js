@@ -152,7 +152,7 @@ function _wcBuildCard(group) {
     minus.className = "wc-minus wc-minus-single";
     minus.setAttribute("aria-label", `Remove ${cities[0].name}`);
     minus.title = `Remove ${cities[0].name}`;
-    minus.innerHTML = _SVG_MINUS;
+    setSvg(minus, _SVG_MINUS);
     minus.addEventListener("click", (e) => {
       e.stopPropagation();
       wcRemoveCity(timezone, cities[0].name);
@@ -186,7 +186,7 @@ function _wcBuildCard(group) {
       minus.className = "wc-minus wc-minus-inline";
       minus.setAttribute("aria-label", `Remove ${city.name}`);
       minus.title = `Remove ${city.name}`;
-      minus.innerHTML = _SVG_MINUS;
+      setSvg(minus, _SVG_MINUS);
       minus.addEventListener("click", (e) => {
         e.stopPropagation();
         wcRemoveCity(timezone, city.name);
@@ -258,7 +258,7 @@ function wcRender() {
   // Fade out, swap, fade in
   container.style.opacity = "0";
   requestAnimationFrame(() => {
-    container.innerHTML = "";
+    container.replaceChildren();
     _wcData.forEach((group) => {
       container.appendChild(_wcBuildCard(group));
     });
@@ -327,7 +327,7 @@ function _wcUpdateControlsUI() {
 
   controls.classList.toggle("is-edit", _wcEditMode);
   if (gearBtn) {
-    gearBtn.innerHTML = _wcEditMode ? _SVG_CLOSE : _SVG_GEAR;
+    setSvg(gearBtn, _wcEditMode ? _SVG_CLOSE : _SVG_GEAR);
     gearBtn.setAttribute(
       "aria-label",
       _wcEditMode ? "Exit edit mode" : "Edit world clocks",
@@ -345,7 +345,7 @@ function _initWcControls() {
   const addBtn = document.getElementById("wcAddBtn");
 
   if (gearBtn) {
-    gearBtn.innerHTML = _SVG_GEAR;
+    setSvg(gearBtn, _SVG_GEAR);
     gearBtn.setAttribute("aria-label", "Edit world clocks");
     gearBtn.addEventListener("click", () => {
       _wcEditMode = !_wcEditMode;
@@ -357,7 +357,10 @@ function _initWcControls() {
   if (addBtn) {
     addBtn.setAttribute("aria-hidden", "true");
     addBtn.setAttribute("tabindex", "-1");
-    addBtn.innerHTML = _SVG_PLUS + "<span>Add City</span>";
+    setSvg(addBtn, _SVG_PLUS);
+    const addCitySpan = document.createElement("span");
+    addCitySpan.textContent = "Add City";
+    addBtn.appendChild(addCitySpan);
     addBtn.addEventListener("click", () => {
       if (typeof wcShowModal === "function") wcShowModal();
     });

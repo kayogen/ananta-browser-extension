@@ -224,7 +224,64 @@ function debounce(fn, wait) {
  * @param {string} html   Trusted HTML (caller is responsible for sanitising dynamic parts).
  */
 function setHtml(el, html) {
-  if (el) el.innerHTML = html;
+  if (!el) return;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, "text/html");
+  el.replaceChildren(...doc.body.childNodes);
+}
+
+/**
+ * Parse a trusted SVG string via DOMParser and set it as the sole child of el.
+ * Avoids innerHTML assignment — satisfies Firefox AMO linter.
+ * @param {HTMLElement} el
+ * @param {string} svgStr  A complete <svg>…</svg> string (must be trusted/static).
+ */
+function setSvg(el, svgStr) {
+  if (!el) return;
+  const doc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+  const svg = doc.documentElement;
+  el.replaceChildren(svg);
+}
+
+/**
+ * Render text inside `el`, wrapping each match of `query` in a <mark class="highlight">.
+ * Builds the DOM directly — no innerHTML involved.
+ * @param {HTMLElement} el
+ * @param {string} text   Plain text (not HTML) to display.
+ * @param {string} query  Search term to highlight.
+ */
+function setHighlight(el, text, query) {
+  if (!el) return;
+  el.replaceChildren();
+  if (!query || !query.trim()) {
+    el.textContent = text;
+    return;
+  }
+  const safe = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  let re;
+  try {
+    re = new RegExp(safe, "gi");
+  } catch {
+    el.textContent = text;
+    return;
+  }
+  let lastIndex = 0;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      el.appendChild(
+        document.createTextNode(text.slice(lastIndex, match.index)),
+      );
+    }
+    const mark = document.createElement("mark");
+    mark.className = "highlight";
+    mark.textContent = match[0];
+    el.appendChild(mark);
+    lastIndex = re.lastIndex;
+  }
+  if (lastIndex < text.length) {
+    el.appendChild(document.createTextNode(text.slice(lastIndex)));
+  }
 }
 
 /**

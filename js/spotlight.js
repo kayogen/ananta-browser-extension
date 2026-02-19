@@ -73,10 +73,7 @@ function _renderResults(items, query) {
 
     const titleEl = document.createElement("div");
     titleEl.className = "sr-title";
-    titleEl.innerHTML = highlightText(
-      item.title || displayUrl(item.url),
-      query,
-    );
+    setHighlight(titleEl, item.title || displayUrl(item.url), query);
     text.appendChild(titleEl);
 
     const urlEl = document.createElement("div");
