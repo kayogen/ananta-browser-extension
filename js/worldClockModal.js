@@ -1,230 +1,245 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   worldClockModal.js — "Add City" modal dialog
-   Depends on: worldClocks.js (wcAddCity must be available)
+   worldClockModal.js — "Add City" modal (search-based, no manual fields)
+   Depends on:
+     worldClocks.js  → wcAddCity()
+     citySearch.js   → initCitySearch()
+   Flow:
+     1. User clicks Add → wcShowModal()
+     2. User types     → Nominatim autocomplete (citySearch.js, debounced 300ms)
+     3. User picks       → tzlookup(lat, lon) — offline, instant (citySearch.js)
+     4. wcAddCity()    → save to localStorage + re-render cards instantly
+     5. Modal closes automatically on success
+   Ananta New Tab · macOS HIG quality
 ══════════════════════════════════════════════════════════════════════════ */
 
 "use strict";
 
-// ─── Fallback timezone list (used if Intl.supportedValuesOf unavailable) ─────
-const WC_TZ_FALLBACK = [
-  "UTC",
-  "Africa/Cairo",
-  "Africa/Johannesburg",
-  "Africa/Lagos",
-  "Africa/Nairobi",
-  "America/Anchorage",
-  "America/Bogota",
-  "America/Buenos_Aires",
-  "America/Caracas",
-  "America/Chicago",
-  "America/Denver",
-  "America/Halifax",
-  "America/Lima",
-  "America/Los_Angeles",
-  "America/Mexico_City",
-  "America/Nassau",
-  "America/New_York",
-  "America/Phoenix",
-  "America/Santiago",
-  "America/Sao_Paulo",
-  "America/St_Johns",
-  "America/Tijuana",
-  "America/Toronto",
-  "America/Vancouver",
-  "Asia/Baghdad",
-  "Asia/Bangkok",
-  "Asia/Colombo",
-  "Asia/Dhaka",
-  "Asia/Dubai",
-  "Asia/Hong_Kong",
-  "Asia/Jakarta",
-  "Asia/Jerusalem",
-  "Asia/Kabul",
-  "Asia/Karachi",
-  "Asia/Kathmandu",
-  "Asia/Kolkata",
-  "Asia/Kuala_Lumpur",
-  "Asia/Manila",
-  "Asia/Nicosia",
-  "Asia/Riyadh",
-  "Asia/Seoul",
-  "Asia/Shanghai",
-  "Asia/Singapore",
-  "Asia/Taipei",
-  "Asia/Tehran",
-  "Asia/Tokyo",
-  "Asia/Yangon",
-  "Atlantic/Azores",
-  "Atlantic/Cape_Verde",
-  "Australia/Adelaide",
-  "Australia/Brisbane",
-  "Australia/Darwin",
-  "Australia/Melbourne",
-  "Australia/Perth",
-  "Australia/Sydney",
-  "Europe/Amsterdam",
-  "Europe/Athens",
-  "Europe/Berlin",
-  "Europe/Brussels",
-  "Europe/Bucharest",
-  "Europe/Budapest",
-  "Europe/Copenhagen",
-  "Europe/Dublin",
-  "Europe/Helsinki",
-  "Europe/Istanbul",
-  "Europe/Kiev",
-  "Europe/Lisbon",
-  "Europe/London",
-  "Europe/Madrid",
-  "Europe/Moscow",
-  "Europe/Oslo",
-  "Europe/Paris",
-  "Europe/Prague",
-  "Europe/Rome",
-  "Europe/Sofia",
-  "Europe/Stockholm",
-  "Europe/Vienna",
-  "Europe/Warsaw",
-  "Europe/Zurich",
-  "Pacific/Auckland",
-  "Pacific/Fiji",
-  "Pacific/Guam",
-  "Pacific/Honolulu",
-  "Pacific/Midway",
-  "Pacific/Noumea",
-  "Pacific/Tahiti",
-];
+// ─── City search widget instance (returned by initCitySearch) ─────────────────
+let _wcSearchWidget = null;
 
-// ─── Build timezone options list ──────────────────────────────────────────────
-function _wcTzList() {
-  try {
-    if (typeof Intl.supportedValuesOf === "function") {
-      return Intl.supportedValuesOf("timeZone");
+/* ─────────────────────────────────────────────────────────────────────────
+   SAFE DOM BUILDER HELPERS — no innerHTML, no eval
+───────────────────────────────────────────────────────────────────────── */
+
+/**
+ * Create an HTML element with optional attributes.
+ * Handles className and textContent as special cases.
+ */
+function _wcEl(tag, props) {
+  const el = document.createElement(tag);
+  if (!props) return el;
+  for (const [k, v] of Object.entries(props)) {
+    if (k === "className") {
+      el.className = v;
+    } else if (k === "textContent") {
+      el.textContent = v;
+    } else {
+      el.setAttribute(k, v);
     }
-  } catch {
-    /* not available */
   }
-  return WC_TZ_FALLBACK;
+  return el;
 }
 
-// ─── Build and inject modal HTML ──────────────────────────────────────────────
+/**
+ * Create an SVG element with child shape elements.
+ * @param {Object} attrs     – Attributes for the <svg> element
+ * @param {Array}  children  – [{ tag, attrs }] child elements
+ */
+function _wcSvg(attrs, children) {
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  for (const [k, v] of Object.entries(attrs)) svg.setAttribute(k, v);
+  (children || []).forEach(({ tag, attrs: ca }) => {
+    const child = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(ca)) child.setAttribute(k, v);
+    svg.appendChild(child);
+  });
+  return svg;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BUILD MODAL  (idempotent — only runs once per page lifetime)
+───────────────────────────────────────────────────────────────────────── */
+
 function _wcBuildModal() {
-  if (document.getElementById("wcModal")) return; // already built
+  if (document.getElementById("wcModal")) return;
 
-  const modal = document.createElement("div");
-  modal.id = "wcModal";
-  modal.className = "wc-modal";
-  modal.setAttribute("aria-hidden", "true");
-  modal.setAttribute("role", "dialog");
-  modal.setAttribute("aria-modal", "true");
-  modal.setAttribute("aria-labelledby", "wcModalTitle");
-
-  modal.innerHTML = `
-    <div class="wc-modal-backdrop" id="wcModalBackdrop"></div>
-    <div class="wc-modal-panel" role="document">
-      <div class="wc-modal-header">
-        <h3 class="wc-modal-title" id="wcModalTitle">Add City</h3>
-        <button class="wc-modal-close-btn" id="wcModalCloseBtn" aria-label="Close dialog">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-            <line x1="5" y1="5" x2="15" y2="15"/>
-            <line x1="15" y1="5" x2="5" y2="15"/>
-          </svg>
-        </button>
-      </div>
-
-      <form class="wc-modal-form" id="wcModalForm" novalidate>
-
-        <div class="wc-field">
-          <label class="wc-field-label" for="wcFieldCity">City Name <span class="wc-required">*</span></label>
-          <input
-            class="wc-field-input"
-            id="wcFieldCity"
-            type="text"
-            placeholder="e.g. Tokyo"
-            autocomplete="off"
-            spellcheck="false"
-            required
-          />
-          <span class="wc-field-error" id="wcErrorCity" aria-live="polite"></span>
-        </div>
-
-        <div class="wc-field-row">
-          <div class="wc-field">
-            <label class="wc-field-label" for="wcFieldState">State / Region</label>
-            <input
-              class="wc-field-input"
-              id="wcFieldState"
-              type="text"
-              placeholder="e.g. IL"
-              autocomplete="off"
-            />
-          </div>
-          <div class="wc-field">
-            <label class="wc-field-label" for="wcFieldCountry">Country <span class="wc-required">*</span></label>
-            <input
-              class="wc-field-input"
-              id="wcFieldCountry"
-              type="text"
-              placeholder="e.g. Japan"
-              autocomplete="off"
-              required
-            />
-            <span class="wc-field-error" id="wcErrorCountry" aria-live="polite"></span>
-          </div>
-        </div>
-
-        <div class="wc-field">
-          <label class="wc-field-label" for="wcFieldTz">Timezone <span class="wc-required">*</span></label>
-          <select class="wc-field-select" id="wcFieldTz" required>
-            <option value="">— Select timezone —</option>
-          </select>
-          <span class="wc-field-error" id="wcErrorTz" aria-live="polite"></span>
-        </div>
-
-        <div class="wc-modal-actions">
-          <button type="button" class="wc-btn wc-btn-ghost" id="wcModalCancelBtn">Cancel</button>
-          <button type="submit" class="wc-btn wc-btn-primary" id="wcModalSubmitBtn">Add City</button>
-        </div>
-
-      </form>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  // Populate timezone dropdown
-  const select = document.getElementById("wcFieldTz");
-  _wcTzList().forEach((tz) => {
-    const opt = document.createElement("option");
-    opt.value = tz;
-    opt.textContent = tz.replace(/_/g, " ");
-    select.appendChild(opt);
+  // ── Outer shell ──────────────────────────────────────────────────────────
+  const modal = _wcEl("div", {
+    id: "wcModal",
+    className: "wc-modal",
+    "aria-hidden": "true",
+    role: "dialog",
+    "aria-modal": "true",
+    "aria-labelledby": "wcModalTitle",
   });
 
-  // Wire events
-  document
-    .getElementById("wcModalBackdrop")
-    .addEventListener("click", wcHideModal);
-  document
-    .getElementById("wcModalCloseBtn")
-    .addEventListener("click", wcHideModal);
-  document
-    .getElementById("wcModalCancelBtn")
-    .addEventListener("click", wcHideModal);
-  document
-    .getElementById("wcModalForm")
-    .addEventListener("submit", _wcHandleSubmit);
+  // ── Backdrop (click → close) ──────────────────────────────────────────────
+  const backdrop = _wcEl("div", {
+    id: "wcModalBackdrop",
+    className: "wc-modal-backdrop",
+  });
 
-  // Keyboard: Escape closes
+  // ── Panel ─────────────────────────────────────────────────────────────────
+  const panel = _wcEl("div", {
+    className: "wc-modal-panel",
+    role: "document",
+  });
+
+  // ── Header: title + close button ─────────────────────────────────────────
+  const header = _wcEl("div", { className: "wc-modal-header" });
+
+  const title = _wcEl("h3", {
+    className: "wc-modal-title",
+    id: "wcModalTitle",
+    textContent: "Add City",
+  });
+
+  const closeBtn = _wcEl("button", {
+    className: "wc-modal-close-btn",
+    id: "wcModalCloseBtn",
+    type: "button",
+    "aria-label": "Close dialog",
+  });
+  closeBtn.appendChild(
+    _wcSvg(
+      {
+        viewBox: "0 0 20 20",
+        fill: "none",
+        stroke: "currentColor",
+        "stroke-width": "1.8",
+        "stroke-linecap": "round",
+        "aria-hidden": "true",
+      },
+      [
+        { tag: "line", attrs: { x1: "5", y1: "5", x2: "15", y2: "15" } },
+        { tag: "line", attrs: { x1: "15", y1: "5", x2: "5", y2: "15" } },
+      ],
+    ),
+  );
+
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+
+  // ── Hint text ─────────────────────────────────────────────────────────────
+  const hint = _wcEl("p", {
+    className: "cs-hint",
+    textContent: "Type a city name to search worldwide.",
+  });
+
+  // ── City search section ───────────────────────────────────────────────────
+  const searchSection = _wcEl("div", { className: "cs-search-section" });
+
+  // Input wrapper — holds icon, input, spinner in the same line
+  const searchWrap = _wcEl("div", { className: "cs-search-wrap" });
+
+  // Magnifier icon (decorative)
+  const searchIcon = _wcSvg(
+    { viewBox: "0 0 20 20", fill: "currentColor", "aria-hidden": "true" },
+    [
+      {
+        tag: "path",
+        attrs: {
+          "fill-rule": "evenodd",
+          d: "M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z",
+          "clip-rule": "evenodd",
+        },
+      },
+    ],
+  );
+  searchIcon.className.baseVal = "cs-search-icon";
+
+  // Search text input (ARIA combobox)
+  const searchInput = _wcEl("input", {
+    id: "wcCitySearchInput",
+    className: "cs-search-input",
+    type: "text",
+    placeholder: "Search city, e.g. Tokyo…",
+    autocomplete: "off",
+    spellcheck: "false",
+    role: "combobox",
+    "aria-autocomplete": "list",
+    "aria-expanded": "false",
+    "aria-haspopup": "listbox",
+    "aria-controls": "wcCityDropdown",
+    "aria-owns": "wcCityDropdown",
+  });
+
+  // CSS-animated spinner (opacity toggled by .cs-loading class on input)
+  const spinner = _wcEl("span", {
+    className: "cs-spinner",
+    "aria-hidden": "true",
+  });
+
+  searchWrap.appendChild(searchIcon);
+  searchWrap.appendChild(searchInput);
+  searchWrap.appendChild(spinner);
+
+  // Suggestion dropdown
+  const dropdown = _wcEl("ul", {
+    id: "wcCityDropdown",
+    className: "cs-dropdown",
+    role: "listbox",
+    "aria-label": "City suggestions",
+  });
+  dropdown.hidden = true;
+
+  // Aria-live status paragraph (no results, errors, "detecting timezone…")
+  const status = _wcEl("p", {
+    id: "wcCityStatus",
+    className: "cs-status",
+    "aria-live": "polite",
+  });
+  status.hidden = true;
+
+  searchSection.appendChild(searchWrap);
+  searchSection.appendChild(dropdown);
+  searchSection.appendChild(status);
+
+  // ── Footer: Cancel button ─────────────────────────────────────────────────
+  const actions = _wcEl("div", { className: "wc-modal-actions" });
+
+  const cancelBtn = _wcEl("button", {
+    type: "button",
+    className: "wc-btn wc-btn-ghost",
+    id: "wcModalCancelBtn",
+    textContent: "Cancel",
+  });
+  actions.appendChild(cancelBtn);
+
+  // ── Assemble ──────────────────────────────────────────────────────────────
+  panel.appendChild(header);
+  panel.appendChild(hint);
+  panel.appendChild(searchSection);
+  panel.appendChild(actions);
+
+  modal.appendChild(backdrop);
+  modal.appendChild(panel);
+  document.body.appendChild(modal);
+
+  // ── Wire close events ─────────────────────────────────────────────────────
+  backdrop.addEventListener("click", wcHideModal);
+  closeBtn.addEventListener("click", wcHideModal);
+  cancelBtn.addEventListener("click", wcHideModal);
+
+  // Keyboard: Escape = close; Tab = trapped inside modal
   modal.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") wcHideModal();
-    // Trap focus within modal
+    if (e.key === "Escape") {
+      wcHideModal();
+      return;
+    }
+
     if (e.key === "Tab") {
-      const focusables = modal.querySelectorAll(
-        'button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])',
-      );
+      const focusables = Array.from(
+        modal.querySelectorAll(
+          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hidden && el.offsetParent !== null);
+
+      if (!focusables.length) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
+
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last.focus();
@@ -234,104 +249,67 @@ function _wcBuildModal() {
       }
     }
   });
+
+  // ── Init city search widget ───────────────────────────────────────────────
+  _wcSearchWidget = initCitySearch(
+    searchInput,
+    dropdown,
+    status,
+    _wcOnCitySelected,
+  );
 }
 
-// ─── Validation ───────────────────────────────────────────────────────────────
-function _wcValidateForm() {
-  const city = document.getElementById("wcFieldCity").value.trim();
-  const country = document.getElementById("wcFieldCountry").value.trim();
-  const tz = document.getElementById("wcFieldTz").value;
-  let valid = true;
+/* ─────────────────────────────────────────────────────────────────────────
+   CITY SELECTED CALLBACK
+───────────────────────────────────────────────────────────────────────── */
 
-  const cityErr = document.getElementById("wcErrorCity");
-  if (!city) {
-    cityErr.textContent = "City name is required.";
-    document.getElementById("wcFieldCity").setAttribute("aria-invalid", "true");
-    valid = false;
-  } else {
-    cityErr.textContent = "";
-    document.getElementById("wcFieldCity").removeAttribute("aria-invalid");
-  }
-
-  const countryErr = document.getElementById("wcErrorCountry");
-  if (!country) {
-    countryErr.textContent = "Country is required.";
-    document
-      .getElementById("wcFieldCountry")
-      .setAttribute("aria-invalid", "true");
-    valid = false;
-  } else {
-    countryErr.textContent = "";
-    document.getElementById("wcFieldCountry").removeAttribute("aria-invalid");
-  }
-
-  const tzErr = document.getElementById("wcErrorTz");
-  if (!tz) {
-    tzErr.textContent = "Please select a timezone.";
-    document.getElementById("wcFieldTz").setAttribute("aria-invalid", "true");
-    valid = false;
-  } else {
-    tzErr.textContent = "";
-    document.getElementById("wcFieldTz").removeAttribute("aria-invalid");
-  }
-
-  return valid;
-}
-
-// ─── Submit handler ───────────────────────────────────────────────────────────
-function _wcHandleSubmit(e) {
-  e.preventDefault();
-  if (!_wcValidateForm()) return;
-
-  const name = document.getElementById("wcFieldCity").value.trim();
-  const state = document.getElementById("wcFieldState").value.trim();
-  const country = document.getElementById("wcFieldCountry").value.trim();
-  const timezone = document.getElementById("wcFieldTz").value;
-
-  const ok = wcAddCity({ name, state, country, timezone });
+/**
+ * Invoked by initCitySearch when the user picks a suggestion and
+ * timezone resolution succeeds.
+ * @param {{ city: string, state: string, country: string, timezone: string }} result
+ */
+function _wcOnCitySelected({ city, state, country, timezone }) {
+  // wcAddCity (worldClocks.js) accepts {name, state, country, timezone}
+  const ok = wcAddCity({ name: city, state, country, timezone });
 
   if (!ok) {
-    const cityErr = document.getElementById("wcErrorCity");
-    cityErr.textContent = `"${name}" already exists in this timezone group.`;
-    document.getElementById("wcFieldCity").focus();
+    // Duplicate — show inline message, keep modal open for retry
+    const statusEl = document.getElementById("wcCityStatus");
+    if (statusEl) {
+      statusEl.textContent = `"${city}" already exists in this timezone group.`;
+      statusEl.className = "cs-status cs-status-error";
+      statusEl.hidden = false;
+    }
+    const input = document.getElementById("wcCitySearchInput");
+    if (input) input.focus();
     return;
   }
 
+  // wcAddCity already called wcSave() + wcRender() — just close the modal
   wcHideModal();
 }
 
-// ─── Show / Hide ──────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────────
+   SHOW / HIDE (public API called by worldClocks.js)
+───────────────────────────────────────────────────────────────────────── */
+
 function wcShowModal() {
-  _wcBuildModal();
+  _wcBuildModal(); // no-op if already built
+
   const modal = document.getElementById("wcModal");
   if (!modal) return;
 
-  // Reset form
-  const form = document.getElementById("wcModalForm");
-  if (form) form.reset();
-  modal
-    .querySelectorAll(".wc-field-error")
-    .forEach((el) => (el.textContent = ""));
-  modal
-    .querySelectorAll("[aria-invalid]")
-    .forEach((el) => el.removeAttribute("aria-invalid"));
-
-  // Pre-select guessed timezone
-  const guessedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const tzSelect = document.getElementById("wcFieldTz");
-  if (tzSelect && guessedTz) {
-    const opt = Array.from(tzSelect.options).find((o) => o.value === guessedTz);
-    if (opt) tzSelect.value = guessedTz;
-  }
+  // Reset the search widget (clears input, dropdown, status, spinner)
+  if (_wcSearchWidget) _wcSearchWidget.clear();
 
   modal.setAttribute("aria-hidden", "false");
   modal.classList.add("is-open");
   document.body.classList.add("wc-modal-open");
 
-  // Focus first input after animation
+  // Auto-focus search input after open animation begins
   setTimeout(() => {
-    const firstInput = document.getElementById("wcFieldCity");
-    if (firstInput) firstInput.focus();
+    const input = document.getElementById("wcCitySearchInput");
+    if (input) input.focus();
   }, 80);
 }
 

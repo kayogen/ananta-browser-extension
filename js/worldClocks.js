@@ -141,16 +141,12 @@ function _wcBuildCard(group) {
   const isNight = wcIsNight(timezone);
 
   const card = document.createElement("div");
-  card.className = "world-clock" + (isNight ? " is-night" : "");
+  card.className = "world-clock clock-card" + (isNight ? " is-night" : "");
   if (_wcEditMode) card.classList.add("is-edit");
   card.dataset.tz = timezone;
   card.setAttribute("role", "listitem");
 
-  // ── HEADER ──────────────────────────────────────────────────────────────
-  const header = document.createElement("div");
-  header.className = "wc-header";
-
-  // Single-city card: minus overlays at card top-left
+  // Single-city card: minus overlays at card top-right
   if (_wcEditMode && cities.length === 1) {
     const minus = document.createElement("button");
     minus.className = "wc-minus wc-minus-single";
@@ -161,25 +157,30 @@ function _wcBuildCard(group) {
       e.stopPropagation();
       wcRemoveCity(timezone, cities[0].name);
     });
-    card.appendChild(minus); // append to card (not header) so it overlays
+    card.appendChild(minus);
   }
 
-  // Cities inline list
-  const citiesEl = document.createElement("div");
-  citiesEl.className = "wc-cities";
+  // ── SECTION 1 (TOP): cities list, horizontal scroll ───────────────────────
+  const sectionTop = document.createElement("div");
+  sectionTop.className = "clock-section-top";
+
+  const citiesScrollContainer = document.createElement("div");
+  citiesScrollContainer.className = "cities-scroll-container";
+
+  const citiesScroll = document.createElement("div");
+  citiesScroll.className = "cities-scroll";
 
   cities.forEach((city, i) => {
     if (i > 0) {
       const sep = document.createElement("span");
       sep.className = "wc-city-sep";
       sep.setAttribute("aria-hidden", "true");
-      citiesEl.appendChild(sep);
+      citiesScroll.appendChild(sep);
     }
 
     const item = document.createElement("div");
-    item.className = "wc-city-item";
+    item.className = "city-item wc-city-item";
 
-    // Per-city minus for multi-city groups
     if (_wcEditMode && cities.length > 1) {
       const minus = document.createElement("button");
       minus.className = "wc-minus wc-minus-inline";
@@ -203,42 +204,48 @@ function _wcBuildCard(group) {
     sub.textContent = [city.state, city.country].filter(Boolean).join(", ");
     item.appendChild(sub);
 
-    citiesEl.appendChild(item);
+    citiesScroll.appendChild(item);
   });
 
-  header.appendChild(citiesEl);
-  card.appendChild(header);
+  citiesScrollContainer.appendChild(citiesScroll);
+  sectionTop.appendChild(citiesScrollContainer);
+  card.appendChild(sectionTop);
 
-  // ── BODY (time + dayphase) ───────────────────────────────────────────────
-  const body = document.createElement("div");
-  body.className = "wc-body";
+  // ── SECTION 2 (MIDDLE): time only ─────────────────────────────────────────
+  const sectionMiddle = document.createElement("div");
+  sectionMiddle.className = "clock-section-middle";
 
   const timeEl = document.createElement("span");
-  timeEl.className = "wc-time";
+  timeEl.className = "time wc-time";
   timeEl.setAttribute("aria-live", "polite");
-  body.appendChild(timeEl);
+  sectionMiddle.appendChild(timeEl);
+
+  card.appendChild(sectionMiddle);
+
+  // ── SECTION 3 (BOTTOM): day/date left, UTC right (space-between) ───────────
+  const sectionBottom = document.createElement("div");
+  sectionBottom.className = "clock-section-bottom";
+
+  const footerLeft = document.createElement("div");
+  footerLeft.className = "clock-footer-left";
 
   const phaseEl = document.createElement("span");
-  phaseEl.className = "wc-dayphase";
-  body.appendChild(phaseEl);
-
-  card.appendChild(body);
-
-  // ── FOOTER (date | utc-offset) ───────────────────────────────────────────
-  const footer = document.createElement("div");
-  footer.className = "wc-footer";
+  phaseEl.className = "dayphase wc-dayphase";
+  footerLeft.appendChild(phaseEl);
 
   const dateEl = document.createElement("span");
-  dateEl.className = "wc-date";
+  dateEl.className = "date wc-date";
   dateEl.setAttribute("aria-live", "polite");
-  footer.appendChild(dateEl);
+  footerLeft.appendChild(dateEl);
+
+  sectionBottom.appendChild(footerLeft);
 
   const offsetEl = document.createElement("span");
   offsetEl.className = "wc-utc-offset";
   offsetEl.setAttribute("aria-live", "polite");
-  footer.appendChild(offsetEl);
+  sectionBottom.appendChild(offsetEl);
 
-  card.appendChild(footer);
+  card.appendChild(sectionBottom);
 
   return card;
 }

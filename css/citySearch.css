@@ -1,0 +1,318 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   citySearch.css — Smart city search widget styles
+   Controls: search input · loading spinner · suggestion dropdown · status
+   Ananta New Tab · macOS HIG quality
+══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HINT TEXT (shown below modal title)
+───────────────────────────────────────────────────────────────────────── */
+
+.cs-hint {
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif
+  );
+  font-size: 12px;
+  color: var(--color-text-tertiary, #8e8e93);
+  margin: -8px 0 var(--sp-4, 16px);
+  line-height: 1.4;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SEARCH SECTION WRAPPER
+───────────────────────────────────────────────────────────────────────── */
+
+.cs-search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: var(--sp-4, 16px);
+}
+
+/* ── Input wrap (positions icon + spinner inside the field) ──────────────── */
+.cs-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Search magnifier icon ───────────────────────────────────────────────── */
+.cs-search-icon {
+  position: absolute;
+  left: 12px;
+  width: 15px;
+  height: 15px;
+  color: var(--color-text-tertiary, #aeaeb2);
+  pointer-events: none;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: color 140ms ease;
+}
+
+.cs-search-wrap:focus-within .cs-search-icon {
+  color: var(--color-accent, #007aff);
+}
+
+/* ── Search input ────────────────────────────────────────────────────────── */
+.cs-search-input {
+  width: 100%;
+  height: 42px;
+  /* left pad: 12px icon offset + 15px icon + 8px breathing room */
+  padding: 0 40px 0 38px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-bg, #f2f2f7);
+  border: 1.5px solid var(--color-border-strong, #c6c6c8);
+  color: var(--color-text-primary, #1c1c1e);
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif
+  );
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  transition:
+    border-color 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.cs-search-input::placeholder {
+  color: var(--color-text-tertiary, #aeaeb2);
+}
+
+.cs-search-input:focus {
+  border-color: var(--color-accent, #007aff);
+  box-shadow: 0 0 0 3px var(--color-accent-bg, rgba(0, 122, 255, 0.12));
+}
+
+/* ── Loading spinner (shown via JS .cs-loading class on input) ───────────── */
+.cs-spinner {
+  position: absolute;
+  right: 12px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-strong, #c6c6c8);
+  border-top-color: var(--color-accent, #007aff);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 140ms ease;
+}
+
+/* .cs-loading is added to the input when a fetch is in flight */
+.cs-search-input.cs-loading ~ .cs-spinner {
+  opacity: 1;
+  animation: cs-spin 0.65s linear infinite;
+}
+
+@keyframes cs-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DROPDOWN — suggestion list
+───────────────────────────────────────────────────────────────────────── */
+
+.cs-dropdown {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  background: var(--color-surface, rgba(255, 255, 255, 0.92));
+  border: var(--glass-border, 1px solid rgba(0, 0, 0, 0.08));
+  border-radius: var(--radius-lg, 12px);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.14),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  overflow-y: auto;
+  max-height: 300px;
+  overscroll-behavior: contain;
+  transform-origin: top center;
+
+  /* Animate in when rendered */
+  animation: cs-drop-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.cs-dropdown[hidden] {
+  display: none;
+}
+
+@keyframes cs-drop-in {
+  from {
+    opacity: 0;
+    transform: scaleY(0.9) translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
+}
+
+/* Custom scrollbar for dropdown */
+.cs-dropdown::-webkit-scrollbar {
+  width: 4px;
+}
+
+.cs-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cs-dropdown::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong, #c6c6c8);
+  border-radius: 2px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SUGGESTION ITEM
+───────────────────────────────────────────────────────────────────────── */
+
+.cs-suggestion-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: calc(var(--radius-lg, 12px) - 4px);
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background 100ms ease,
+    color 100ms ease;
+}
+
+/* Hover + keyboard active state: accent fill (macOS style) */
+.cs-suggestion-item:hover,
+.cs-suggestion-item.cs-active {
+  background: var(--color-accent, #007aff);
+}
+
+.cs-suggestion-item:hover .cs-city-name,
+.cs-suggestion-item.cs-active .cs-city-name {
+  color: #fff;
+}
+
+.cs-suggestion-item:hover .cs-city-sub,
+.cs-suggestion-item.cs-active .cs-city-sub {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* City name (primary label) */
+.cs-city-name {
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif
+  );
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1c1c1e);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  transition: color 100ms ease;
+}
+
+/* State, Country (secondary label) */
+.cs-city-sub {
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif
+  );
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--color-text-tertiary, #8e8e93);
+  letter-spacing: 0;
+  line-height: 1.3;
+  transition: color 100ms ease;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   STATUS / ERROR MESSAGE
+───────────────────────────────────────────────────────────────────────── */
+
+.cs-status {
+  font-family: var(
+    --font-sans,
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    system-ui,
+    sans-serif
+  );
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text-tertiary, #8e8e93);
+  margin: 8px 2px 0;
+  line-height: 1.4;
+}
+
+.cs-status[hidden] {
+  display: none;
+}
+
+.cs-status.cs-status-error {
+  color: var(--color-destructive, #ff3b30);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DARK MODE OVERRIDES
+───────────────────────────────────────────────────────────────────────── */
+
+@media (prefers-color-scheme: dark) {
+  .cs-search-input {
+    background: rgba(28, 28, 30, 0.85);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .cs-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.28);
+  }
+
+  .cs-search-input:focus {
+    border-color: var(--color-accent, #0a84ff);
+    box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.2);
+  }
+
+  .cs-spinner {
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top-color: var(--color-accent, #0a84ff);
+  }
+
+  .cs-dropdown {
+    background: rgba(28, 28, 30, 0.96);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.55),
+      0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+
+  .cs-dropdown::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .cs-city-name {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .cs-city-sub {
+    color: rgba(255, 255, 255, 0.4);
+  }
+}

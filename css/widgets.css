@@ -158,7 +158,7 @@
 
 /* ─────────────────────────────────────────────────────────────────────────
    WORLD CLOCK GRID
-   Inner card structure (header/body/footer) is handled by worldClocks.css
+   Card structure (clock-left | clock-right) is in worldClocks.css
 ───────────────────────────────────────────────────────────────────────── */
 
 #worldClocks {
@@ -167,7 +167,9 @@
   gap: var(--sp-2);
   width: 100%;
   overflow-y: auto;
+  overflow-x: visible; /* allow minus badges to overhang card edges */
   scrollbar-width: none;
+  padding-top: 8px; /* room above first card for .wc-minus-single at top:-6px */
   padding-bottom: var(--sp-2);
   transition: opacity 150ms var(--ease-out);
 }
@@ -176,28 +178,31 @@
   display: none;
 }
 
-/* ── Base card shell ──────────────────────────────────────────────────────── */
-.world-clock {
+/* ── Base card shell (column: top = cities, middle = time, bottom = date | UTC) ─ */
+.world-clock.clock-card {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   position: relative; /* anchor for .wc-minus-single overlay */
-  padding: var(--sp-3);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--sp-3) var(--sp-4);
   border-radius: var(--radius-xl);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
-  box-shadow: var(--shadow-xs, 0 1px 4px rgba(0, 0, 0, 0.07));
-  min-height: 110px;
+  box-shadow: var(--shadow-sm);
+  min-height: 150px;
   cursor: default;
   user-select: none;
-  overflow: visible; /* allow minus badge to overhang */
+  overflow: hidden;
+  gap: var(--sp-2);
   transition:
     background var(--dur-normal) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
     transform var(--dur-fast) var(--ease-out),
     box-shadow var(--dur-fast) var(--ease-out);
-  gap: var(--sp-1);
 }
 
 .world-clock:hover:not(.is-edit) {

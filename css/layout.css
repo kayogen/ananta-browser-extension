@@ -256,6 +256,64 @@ body {
   flex-direction: column;
 }
 
+/* ══ BRAND MARK — top-left wordmark ════════════════════════════════════ */
+.brand-mark {
+  position: absolute;
+  left: var(--sp-8);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.brand-name {
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  background: linear-gradient(
+    135deg,
+    var(--color-text-primary) 0%,
+    var(--color-accent) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.brand-tagline {
+  font-family: var(--font-sans);
+  font-size: 9.5px;
+  font-weight: 400;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.brand-heart {
+  color: #ff3b30;
+  -webkit-text-fill-color: #ff3b30;
+  font-size: 9px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-name {
+    background: linear-gradient(
+      135deg,
+      rgba(245, 245, 247, 0.92) 0%,
+      var(--color-accent) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
 /* ══ TOP BAR — 10vh — Spotlight search ══════════════════════════════════ */
 #topBar {
   height: 30vh;

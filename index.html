@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="css/launchpad.css" />
     <link rel="stylesheet" href="css/bookmarks.css" />
     <link rel="stylesheet" href="css/worldClocks.css" />
+    <link rel="stylesheet" href="css/citySearch.css" />
   </head>
   <body>
     <div id="app">
@@ -22,6 +23,16 @@
            TOP BAR — Spotlight search (10vh)
       ══════════════════════════════════════════════════ -->
       <header id="topBar" aria-label="Search">
+        <!-- ── Brand wordmark (top-left) ────────────────────────────────── -->
+        <div class="brand-mark" aria-label="Ananta">
+          <span class="brand-name">ANANTA</span>
+          <span class="brand-tagline"
+            >Made with
+            <span class="brand-heart" aria-label="love">&#10084;</span> by
+            Kartik Tyagi</span
+          >
+        </div>
+
         <!-- Spotlight trigger bar -->
         <div
           id="spotlightBar"
@@ -210,6 +221,8 @@
     <script src="js/clocks.js"></script>
     <script src="js/worldClockTime.js"></script>
     <script src="js/worldClocks.js"></script>
+    <script src="js/tzlookup.js"></script>
+    <script src="js/citySearch.js"></script>
     <script src="js/worldClockModal.js"></script>
     <script src="js/spotlight.js"></script>
     <script src="js/topsites.js"></script>

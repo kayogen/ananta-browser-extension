@@ -118,21 +118,37 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   WORLD CLOCK CARD STRUCTURE — updated for dynamic multi-city layout
+   WORLD CLOCK CARD — three horizontal sections (column layout)
+   Top: cities (scroll) · Middle: time · Bottom: day/date left | UTC right
+   Overflow scroll ONLY on .cities-scroll-container.
 ───────────────────────────────────────────────────────────────────────── */
 
-/* ── HEADER: multi-city row ─────────────────────────────────────────────── */
-.wc-header {
+/* SECTION 1 (TOP) — cities list, horizontal scroll inside card */
+.clock-section-top {
   flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  margin-bottom: var(--sp-3); /* extra gap before middle & bottom sections */
 }
 
-.wc-cities {
+.cities-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-top: 14px; /* room for inline minus badges */
+}
+
+.cities-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.cities-scroll {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0;
-  row-gap: var(--sp-1);
+  flex-wrap: nowrap;
+  gap: 16px;
+  width: max-content;
 }
 
 /* Vertical divider between city items */
@@ -141,7 +157,7 @@
   width: 1px;
   align-self: stretch;
   background: var(--color-separator);
-  margin: 2px var(--sp-2);
+  margin: 2px 0;
   opacity: 0.6;
   flex-shrink: 0;
 }
@@ -150,17 +166,22 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-/* Individual city stack */
+/* CRITICAL FIX 4 — prevent city items shrinking */
+.city-item {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .wc-city-item {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  position: relative; /* anchor for inline minus */
-  padding-top: 4px; /* room for inline minus badge */
+  position: relative;
+  padding-right: 10px;
 }
 
 .wc-city-name {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--color-text-primary);
   letter-spacing: -0.01em;
@@ -173,7 +194,7 @@
 }
 
 .wc-city-sub {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 400;
   color: var(--color-text-tertiary);
   letter-spacing: 0.02em;
@@ -185,55 +206,54 @@
   color: rgba(255, 255, 255, 0.3);
 }
 
-/* ── BODY: centered time + day phase ────────────────────────────────────── */
-.wc-body {
-  flex: 1;
+/* SECTION 2 (MIDDLE) — time only, aligned right, never clipped */
+.clock-section-middle {
+  flex: 1 1 auto;
+  min-height: 2.2em;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: var(--sp-2) 0 var(--sp-1);
+  justify-content: flex-end;
+  min-width: 0;
 }
 
+.time.wc-time,
 .wc-time {
+  white-space: nowrap;
+  overflow: visible;
+  flex-shrink: 0;
   display: block;
-  font-size: clamp(20px, 2vw, 28px);
+  font-size: clamp(22px, 2.4vw, 32px);
   font-weight: 200;
   letter-spacing: -0.04em;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
   line-height: 1;
-  text-align: center;
+  text-align: right;
+}
+
+/* SECTION 3 (BOTTOM) — day/date left, UTC right, space-between */
+.clock-section-bottom {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.clock-footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
+  min-width: 0;
 }
 
 .world-clock.is-night .wc-time {
   color: rgba(245, 245, 247, 0.98);
 }
 
-.wc-dayphase {
-  font-size: 9px;
-  font-weight: 500;
-  color: var(--color-text-tertiary);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 4px;
-  text-align: center;
-  line-height: 1;
-}
-
-.world-clock.is-night .wc-dayphase {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-/* ── FOOTER: date (left) + UTC offset (right) ───────────────────────────── */
-.wc-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0;
-  gap: var(--sp-1);
-}
-
+.date.wc-date,
 .wc-date {
   font-size: 9px;
   font-weight: 400;
@@ -246,7 +266,23 @@
   color: rgba(255, 255, 255, 0.28);
 }
 
+.dayphase.wc-dayphase,
+.wc-dayphase {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.world-clock.is-night .wc-dayphase {
+  color: rgba(255, 255, 255, 0.3);
+}
+
 .wc-utc-offset {
+  flex-shrink: 0;
   font-size: 9px;
   font-weight: 500;
   color: var(--color-text-tertiary);
@@ -274,6 +310,7 @@
   cursor: pointer;
   padding: 0;
   flex-shrink: 0;
+  z-index: 20;
 
   /* Hidden (animated in on edit mode) */
   opacity: 0;
@@ -306,12 +343,13 @@
   pointer-events: all;
 }
 
-/* ── Single-city: absolute overlay at card top-left ──────────────────────── */
+/* ── Single-city: absolute overlay at card top-RIGHT ─────────────────────── */
 .wc-minus-single {
   position: absolute;
   top: -6px;
-  left: -6px;
-  z-index: 5;
+  right: -6px;
+  left: auto;
+  z-index: 20;
 }
 
 /* Card needs relative positioning for this */
@@ -319,12 +357,13 @@
   position: relative;
 }
 
-/* ── Per-city inline minus (shown above city name) ───────────────────────── */
+/* ── Per-city inline minus (shown at top-right of each city block) ──────── */
 .wc-minus-inline {
   position: absolute;
-  top: -8px;
-  left: -2px;
-  z-index: 5;
+  top: -12px;
+  right: -2px;
+  left: auto;
+  z-index: 20;
 }
 
 /* Stagger minus icon animation for each card */
@@ -358,29 +397,15 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   EDIT MODE CARD TREATMENT — subtle jiggle + border highlight
+   EDIT MODE CARD TREATMENT — red border highlight
 ───────────────────────────────────────────────────────────────────────── */
 
-@keyframes wc-jiggle {
-  0%,
-  100% {
-    transform: translateY(-1px) rotate(-0.3deg);
-  }
-  50% {
-    transform: translateY(-1px) rotate(0.3deg);
-  }
-}
-
 .world-clock.is-edit {
-  animation: wc-jiggle 0.6s ease-in-out infinite;
+  overflow: visible;
   border-color: var(--color-destructive) !important;
   box-shadow:
     var(--shadow-xs, 0 1px 4px rgba(0, 0, 0, 0.07)),
     0 0 0 1.5px rgba(255, 59, 48, 0.25);
-}
-
-.world-clock.is-edit:hover {
-  animation-play-state: paused;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────

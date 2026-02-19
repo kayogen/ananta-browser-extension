@@ -5,9 +5,9 @@
   "description": "A beautiful, privacy-first new tab page with bookmarks, top sites, and history.",
   "author": "KayoGen",
 
-  "permissions": ["bookmarks", "history", "topSites", "sessions"],
+  "permissions": ["bookmarks", "history", "topSites", "sessions", "storage"],
 
-  "host_permissions": [],
+  "host_permissions": ["https://nominatim.openstreetmap.org/*"],
 
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -37,6 +37,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob:; style-src 'self'; font-src 'self'; script-src 'self'"
+    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src https://nominatim.openstreetmap.org"
   }
 }
