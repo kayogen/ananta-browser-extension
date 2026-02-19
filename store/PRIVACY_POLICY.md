@@ -33,4 +33,4 @@ No user data, browser data, or identifiers are sent with this request.
 
 ## Contact
 
-For privacy questions, contact: **kartik@kayogen.com** ← update before publishing
+For privacy questions, contact: **kartik9756@gmail.com** ← update before publishing
