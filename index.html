@@ -16,8 +16,132 @@
     <link rel="stylesheet" href="css/bookmarks.css" />
     <link rel="stylesheet" href="css/worldClocks.css" />
     <link rel="stylesheet" href="css/citySearch.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
   </head>
   <body>
+    <!-- ── Dashboard open button (fixed top-left) ─────────────────────── -->
+    <button
+      id="dashboardOpenBtn"
+      aria-label="Dashboard — Pinned Apps"
+      title="Dashboard"
+    ></button>
+
+    <!-- ══════════════════════════════════════════════════
+         DASHBOARD MODAL — Pinned Apps
+    ══════════════════════════════════════════════════ -->
+    <div
+      id="dashboardOverlay"
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Dashboard — Pinned Apps"
+      aria-modal="true"
+    >
+      <!-- Backdrop -->
+      <div id="dbBackdrop" class="spring-gpu"></div>
+
+      <!-- Panel -->
+      <div id="dashboardPanel" class="spring-gpu" tabindex="-1">
+        <!-- Header -->
+        <div class="db-panel-header">
+          <span class="db-panel-title">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              width="16"
+              height="16"
+              aria-hidden="true"
+            >
+              <rect x="2" y="2" width="6" height="6" rx="1.5" />
+              <rect x="12" y="2" width="6" height="6" rx="1.5" />
+              <rect x="2" y="12" width="6" height="6" rx="1.5" />
+              <rect x="12" y="12" width="6" height="6" rx="1.5" />
+            </svg>
+            Applications
+          </span>
+          <input
+            id="dbSearchInput"
+            type="search"
+            placeholder="Search apps…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Search apps"
+          />
+          <div class="db-header-controls">
+            <button
+              id="dbSettingsBtn"
+              aria-label="Settings"
+              title="Settings"
+            ></button>
+            <button id="dbCloseBtn" aria-label="Close Dashboard" title="Close">
+              &times;
+            </button>
+          </div>
+        </div>
+
+        <!-- Body: apps grid + add button -->
+        <div class="db-panel-body">
+          <div id="dashboardGrid" role="list" aria-label="Pinned apps"></div>
+        </div>
+
+        <!-- Add App dialog (sheet inside panel) -->
+        <div
+          id="dbAddDialog"
+          aria-hidden="true"
+          role="dialog"
+          aria-label="Add app"
+          aria-modal="true"
+        >
+          <div class="db-dialog-backdrop"></div>
+          <div class="db-dialog-sheet">
+            <div class="db-dialog-header">
+              <h3 class="db-dialog-title">Add App</h3>
+              <button id="dbDialogClose" aria-label="Cancel">&times;</button>
+            </div>
+            <div class="db-dialog-body">
+              <div class="db-field">
+                <label class="db-field-label" for="dbDialogUrl">
+                  URL <span class="db-required">*</span>
+                </label>
+                <input
+                  id="dbDialogUrl"
+                  class="db-input"
+                  type="url"
+                  placeholder="https://example.com"
+                  autocomplete="url"
+                  spellcheck="false"
+                />
+              </div>
+              <div class="db-field">
+                <label class="db-field-label" for="dbDialogName">
+                  Name <span class="db-optional">(optional)</span>
+                </label>
+                <input
+                  id="dbDialogName"
+                  class="db-input"
+                  type="text"
+                  placeholder="Auto-detected from URL"
+                  autocomplete="off"
+                  spellcheck="false"
+                />
+              </div>
+            </div>
+            <div class="db-dialog-actions">
+              <button id="dbDialogCancel" class="db-btn db-btn-secondary">
+                Cancel
+              </button>
+              <button id="dbDialogSave" class="db-btn db-btn-primary">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /#dbAddDialog -->
+      </div>
+      <!-- /#dashboardPanel -->
+    </div>
+    <!-- /#dashboardOverlay -->
+
     <div id="app">
       <!-- ══════════════════════════════════════════════════
            TOP BAR — Spotlight search (10vh)
@@ -225,6 +349,8 @@
     <script src="js/spotlight.js"></script>
     <script src="js/topsites.js"></script>
     <script src="js/bookmarks.js"></script>
+    <script src="js/storage/appsStorage.js"></script>
+    <script src="js/dashboard.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>
