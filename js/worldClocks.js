@@ -120,14 +120,12 @@ const _SVG_MINUS = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.or
   <rect x="4" y="7.25" width="8" height="1.5" rx="0.75" fill="white"/>
 </svg>`;
 
-const _SVG_GEAR = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-  <circle cx="10" cy="10" r="3"/>
-  <path d="M10 2.5A1.5 1.5 0 0 1 11.5 1h0A1.5 1.5 0 0 1 13 2.5v.34a7.5 7.5 0 0 1 1.33.77l.3-.17a1.5 1.5 0 0 1 2.05.55h0a1.5 1.5 0 0 1-.55 2.05l-.29.17a7.6 7.6 0 0 1 0 1.54l.29.17a1.5 1.5 0 0 1 .55 2.05h0a1.5 1.5 0 0 1-2.05.55l-.3-.17A7.5 7.5 0 0 1 13 11.16v.34A1.5 1.5 0 0 1 11.5 13h0A1.5 1.5 0 0 1 10 11.5v-.17a7.5 7.5 0 0 1-1.33-.77l-.3.17a1.5 1.5 0 0 1-2.05-.55h0a1.5 1.5 0 0 1 .55-2.05l.29-.17a7.6 7.6 0 0 1 0-1.54l-.29-.17a1.5 1.5 0 0 1-.55-2.05h0a1.5 1.5 0 0 1 2.05-.55l.3.17A7.5 7.5 0 0 1 10 2.83V2.5z"/>
+const _SVG_GEAR = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+  <path fill-rule="evenodd" d="M8.34 1.804A1 1 0 019.32 1h1.36a1 1 0 01.98.804l.295 1.473c.497.144.971.342 1.416.587l1.25-.834a1 1 0 011.262.125l.962.962a1 1 0 01.125 1.262l-.834 1.25c.245.445.443.919.587 1.416l1.473.294a1 1 0 01.804.98v1.361a1 1 0 01-.804.98l-1.473.295a6.95 6.95 0 01-.587 1.416l.834 1.25a1 1 0 01-.125 1.262l-.962.962a1 1 0 01-1.262.125l-1.25-.834a6.953 6.953 0 01-1.416.587l-.294 1.473a1 1 0 01-.98.804H9.32a1 1 0 01-.98-.804l-.295-1.473a6.957 6.957 0 01-1.416-.587l-1.25.834a1 1 0 01-1.262-.125l-.962-.962a1 1 0 01-.125-1.262l.834-1.25a6.957 6.957 0 01-.587-1.416l-1.473-.294A1 1 0 011 10.68V9.32a1 1 0 01.804-.98l1.473-.295c.144-.497.342-.971.587-1.416l-.834-1.25a1 1 0 01.125-1.262l.962-.962A1 1 0 014.38 3.03l1.25.834a6.957 6.957 0 011.416-.587l.294-1.473zM13 10a3 3 0 11-6 0 3 3 0 016 0z" clip-rule="evenodd"/>
 </svg>`;
 
-const _SVG_CLOSE = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
-  <line x1="5" y1="5" x2="15" y2="15"/>
-  <line x1="15" y1="5" x2="5" y2="15"/>
+const _SVG_CLOSE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" width="14" height="14" fill="currentColor" aria-hidden="true">
+  <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
 </svg>`;
 
 const _SVG_PLUS = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">

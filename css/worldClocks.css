@@ -24,26 +24,27 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
   border: var(--glass-border);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary, #1d1d1f);
   flex-shrink: 0;
-  transition:
-    background 150ms var(--ease-out),
-    color 150ms var(--ease-out),
-    transform 150ms var(--ease-out);
+  appearance: none;
+  -webkit-appearance: none;
+  overflow: visible;
+  background: transparent;
+  padding: 0;
 }
 
 .wc-gear-btn svg {
   width: 14px;
   height: 14px;
   pointer-events: none;
+  fill: currentColor;
+  display: block;
+  flex-shrink: 0;
 }
 
 .wc-gear-btn:hover {
@@ -128,7 +129,7 @@
   flex-shrink: 0;
   min-width: 0;
   overflow: hidden;
-  margin-bottom: var(--sp-3); /* extra gap before middle & bottom sections */
+  margin-bottom: 0; /* gap handled by card's flex gap */
 }
 
 .cities-scroll-container {
@@ -506,7 +507,8 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: var(--color-text-secondary);
+  /* Use primary so icon is always visible regardless of theme overrides */
+  color: var(--color-text-primary, #1d1d1f);
   transition:
     background 140ms,
     color 140ms;
@@ -516,6 +518,7 @@
 .wc-modal-close-btn svg {
   width: 12px;
   height: 12px;
+  fill: currentColor;
 }
 
 .wc-modal-close-btn:hover {

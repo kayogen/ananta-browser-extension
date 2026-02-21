@@ -1,14 +1,27 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   topsites.js — Launchpad-style Top Sites grid with magnetic hover
+   topsites.js — Paginated single-row Top Sites with magnetic hover
+   Layout: 10 items per page · scroll-snap · dot pagination
    Uses icons.js (DDG → Google → letter badge) · Physics hover via rAF
 ══════════════════════════════════════════════════════════════════════════ */
 
 "use strict";
 
-/* ── Magnetic hover constants ────────────────────────────────────────────── */
-const MAG_RADIUS = 120; // px — effect radius from cursor to icon center
+/* ── Constants ──────────────────────────────────────────────────────────── */
+const LP_PAGE_SIZE = 10;
+const MAG_RADIUS = 130; // px — effect radius from cursor to icon center
 const MAG_FACTOR = 0.28; // max displacement as fraction of radius
-const MAG_MAX_PX = 10; // max pixel displacement
+const MAG_MAX_PX = 10; // maximum pixel displacement
+
+/* ── Module state ───────────────────────────────────────────────────────── */
+let _magRafId = null;
+let _magCursorX = 0;
+let _magCursorY = 0;
+let _magActive = false;
+
+let _lpCurrentPage = 0;
+let _lpTrackEl = null;
+let _lpDotsEl = null;
+let _lpPageEls = [];
 
 /* ── Fetch ───────────────────────────────────────────────────────────────── */
 async function _fetchTopSites() {
@@ -21,8 +34,8 @@ async function _fetchTopSites() {
   }
 }
 
-/* ── Render one Launchpad card ────────────────────────────────────────────── */
-function _renderLpCard(site, index) {
+/* ── Render one site card ────────────────────────────────────────────────── */
+function _renderLpCard(site, indexInPage) {
   const domain = cleanDomain(site.url);
   const label = site.title || domain;
 
@@ -32,18 +45,16 @@ function _renderLpCard(site, index) {
   a.title = label + "\n" + site.url;
   a.setAttribute("role", "listitem");
   a.rel = "noopener noreferrer";
-  a.style.animationDelay = Math.min(index * 22, 550) + "ms";
+  a.style.animationDelay = Math.min(indexInPage * 28, 250) + "ms";
 
   a.addEventListener("click", (e) => {
     e.preventDefault();
     window.location.href = site.url;
   });
 
-  // Icon wrapper
   const iconWrap = document.createElement("div");
   iconWrap.className = "lp-icon-wrap";
 
-  // Use icons.js: DDG → Google → letter badge
   const img = document.createElement("img");
   img.className = "lp-favicon";
   img.alt = "";
@@ -51,57 +62,52 @@ function _renderLpCard(site, index) {
   img.height = 28;
   img.decoding = "async";
 
-  // getIconSync returns a badge immediately, resolves to real icon asynchronously
   const immediate = AnantaIcons.getIconSync(site.url, 64, (resolved) => {
     img.src = resolved;
   });
   img.src = immediate;
   img.onerror = () => {
-    // Replace img with letter badge if all providers fail
-    img.replaceWith(_mkLetterBadge(label, domain));
+    img.src = AnantaIcons.letterBadge(domain, 64);
   };
+
   iconWrap.appendChild(img);
   a.appendChild(iconWrap);
 
-  // Title
   const title = document.createElement("span");
   title.className = "lp-title";
   title.textContent =
-    label.length > 30 ? label.slice(0, 27).trim() + "…" : label;
+    label.length > 18 ? label.slice(0, 16).trim() + "…" : label;
   a.appendChild(title);
 
   return a;
 }
 
-/* ── Letter badge (in-grid fallback) ─────────────────────────────────────── */
-function _mkLetterBadge(label, domain) {
-  const wrap = document.createElement("div");
-  wrap.className = "lp-icon-wrap";
-  // Use icons.js letterBadge as img src for consistency
-  const img = document.createElement("img");
-  img.className = "lp-favicon";
-  img.alt = "";
-  img.width = 28;
-  img.height = 28;
-  img.src = AnantaIcons.letterBadge(domain, 64);
-  wrap.appendChild(img);
-  return wrap.firstChild; // return just the img
+/* ── Navigate to a page ─────────────────────────────────────────────────── */
+function _lpGoToPage(pageIndex, smooth = true) {
+  if (!_lpTrackEl) return;
+  const pageWidth = _lpTrackEl.clientWidth;
+  _lpTrackEl.scrollTo({
+    left: pageIndex * pageWidth,
+    behavior: smooth ? "smooth" : "instant",
+  });
+  _lpSetActiveDot(pageIndex);
 }
 
-/* ── Magnetic hover effect ──────────────────────────────────────────────────
-   On each pointermove over the grid, we compute a displacement vector for
-   every icon within MAG_RADIUS pixels of the cursor and apply it via
-   direct style.transform. This runs inside a rAF loop while the pointer
-   is inside the grid.                                                      */
+/* ── Update active pagination dot ───────────────────────────────────────── */
+function _lpSetActiveDot(pageIndex) {
+  _lpCurrentPage = pageIndex;
+  if (!_lpDotsEl) return;
+  _lpDotsEl.querySelectorAll(".lp-dot").forEach((dot, i) => {
+    const active = i === pageIndex;
+    dot.classList.toggle("lp-dot--active", active);
+    dot.setAttribute("aria-current", active ? "true" : "false");
+  });
+}
 
-let _magRafId = null;
-let _magCursorX = 0;
-let _magCursorY = 0;
-let _magActive = false;
-
-function _startMagneticLoop(grid) {
+/* ── Magnetic hover (rAF loop, visible page only) ───────────────────────── */
+function _startMagneticLoop(outerEl) {
   function resetAll() {
-    grid.querySelectorAll(".lp-item").forEach((el) => {
+    outerEl.querySelectorAll(".lp-item").forEach((el) => {
       el.classList.remove("is-magnetic");
       el.style.transform = "";
     });
@@ -114,8 +120,13 @@ function _startMagneticLoop(grid) {
       return;
     }
 
-    const items = grid.querySelectorAll(".lp-item");
-    items.forEach((el) => {
+    const visiblePage = _lpPageEls[_lpCurrentPage];
+    if (!visiblePage) {
+      _magRafId = requestAnimationFrame(loop);
+      return;
+    }
+
+    visiblePage.querySelectorAll(".lp-item").forEach((el) => {
       const rect = el.getBoundingClientRect();
       const cx = rect.left + rect.width / 2;
       const cy = rect.top + rect.height / 2;
@@ -128,8 +139,7 @@ function _startMagneticLoop(grid) {
         const pushX = Math.min(MAG_MAX_PX, dx * strength * MAG_FACTOR);
         const pushY = Math.min(MAG_MAX_PX, dy * strength * MAG_FACTOR);
         el.classList.add("is-magnetic");
-        // Blend with hover translateY if hovered — we use translateZ(0) + translate
-        el.style.transform = `translateZ(0) translate(${pushX.toFixed(2)}px, ${pushY.toFixed(2)}px)`;
+        el.style.transform = `translateZ(0) translate(${pushX.toFixed(2)}px,${pushY.toFixed(2)}px)`;
       } else if (el.classList.contains("is-magnetic")) {
         el.classList.remove("is-magnetic");
         el.style.transform = "";
@@ -139,7 +149,7 @@ function _startMagneticLoop(grid) {
     _magRafId = requestAnimationFrame(loop);
   }
 
-  grid.addEventListener("pointermove", (e) => {
+  outerEl.addEventListener("pointermove", (e) => {
     _magCursorX = e.clientX;
     _magCursorY = e.clientY;
     if (!_magActive) {
@@ -148,37 +158,107 @@ function _startMagneticLoop(grid) {
     }
   });
 
-  grid.addEventListener("pointerleave", () => {
+  outerEl.addEventListener("pointerleave", () => {
     _magActive = false;
-    // Loop will call resetAll on next frame
   });
 }
 
-/* ── Init ─────────────────────────────────────────────────────────────────── */
+/* ── Init ───────────────────────────────────────────────────────────────── */
 async function initTopSites() {
-  const grid = document.getElementById("launchpadGrid");
-  if (!grid) return [];
+  const section = document.getElementById("topSitesArea");
+  if (!section) return [];
 
   const sites = await _fetchTopSites();
-  grid.innerHTML = "";
+
+  // Clear skeleton placeholder
+  section.replaceChildren();
 
   if (sites.length === 0) {
-    grid.innerHTML = `<div class="lp-empty">Browse the web to populate this grid</div>`;
+    const outer = document.createElement("div");
+    outer.className = "lp-outer";
+    const msg = document.createElement("p");
+    msg.className = "lp-empty";
+    msg.textContent = "Browse the web to populate Top Sites";
+    outer.appendChild(msg);
+    section.appendChild(outer);
     return [];
   }
 
-  // Responsive 2-row grid: ceil(N/2) columns so items fill 2 even rows
-  const cols = Math.ceil(sites.length / 2);
-  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  /* ── Outer glass card (overflow: hidden) ─────────────────────────────── */
+  const outer = document.createElement("div");
+  outer.className = "lp-outer";
 
-  const frag = document.createDocumentFragment();
-  sites.forEach((site, i) => frag.appendChild(_renderLpCard(site, i)));
-  grid.appendChild(frag);
+  /* ── Scroll track (overflow-x: scroll, scroll-snap) ─────────────────── */
+  const track = document.createElement("div");
+  track.className = "lp-track";
+  track.setAttribute("role", "list");
+  track.setAttribute("aria-label", "Most visited sites");
+  _lpTrackEl = track;
+  _lpPageEls = [];
+  _lpCurrentPage = 0;
 
-  // Start magnetic hover
-  _startMagneticLoop(grid);
+  /* ── Build pages of LP_PAGE_SIZE ────────────────────────────────────── */
+  const pages = [];
+  for (let i = 0; i < sites.length; i += LP_PAGE_SIZE) {
+    pages.push(sites.slice(i, i + LP_PAGE_SIZE));
+  }
 
-  // Preload icons in background for snappier display
+  pages.forEach((pageSites, pageIdx) => {
+    const page = document.createElement("div");
+    page.className = "lp-page";
+    page.dataset.page = String(pageIdx);
+
+    const frag = document.createDocumentFragment();
+    pageSites.forEach((site, i) => frag.appendChild(_renderLpCard(site, i)));
+    page.appendChild(frag);
+    track.appendChild(page);
+    _lpPageEls.push(page);
+  });
+
+  outer.appendChild(track);
+  section.appendChild(outer);
+
+  /* ── Pagination dots (only if more than 1 page) ─────────────────────── */
+  if (pages.length > 1) {
+    const pagination = document.createElement("div");
+    pagination.className = "lp-pagination";
+    _lpDotsEl = pagination;
+
+    pages.forEach((_, i) => {
+      const dot = document.createElement("button");
+      dot.className = "lp-dot" + (i === 0 ? " lp-dot--active" : "");
+      dot.setAttribute("type", "button");
+      dot.setAttribute("aria-label", `Go to page ${i + 1}`);
+      dot.setAttribute("aria-current", i === 0 ? "true" : "false");
+      dot.addEventListener("click", () => _lpGoToPage(i));
+      pagination.appendChild(dot);
+    });
+
+    section.appendChild(pagination);
+
+    /* sync dots on scroll */
+    let _scrollDebounce = null;
+    track.addEventListener(
+      "scroll",
+      () => {
+        if (_scrollDebounce) clearTimeout(_scrollDebounce);
+        _scrollDebounce = setTimeout(() => {
+          const pageWidth = track.clientWidth || 1;
+          const page = Math.round(track.scrollLeft / pageWidth);
+          const clamped = Math.max(0, Math.min(pages.length - 1, page));
+          if (clamped !== _lpCurrentPage) _lpSetActiveDot(clamped);
+        }, 60);
+      },
+      { passive: true },
+    );
+  } else {
+    _lpDotsEl = null;
+  }
+
+  /* ── Magnetic hover ─────────────────────────────────────────────────── */
+  _startMagneticLoop(outer);
+
+  /* ── Background icon preload ────────────────────────────────────────── */
   AnantaIcons.preloadIcons(
     sites.map((s) => s.url),
     64,

@@ -1,61 +1,87 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   launchpad.css — Launchpad-style Top Sites grid
-   macOS Launchpad / App Exposé aesthetic with spring physics
+   launchpad.css — Paginated single-row Top Sites
+   Layout: 10 items per page · scroll-snap · dot pagination · magnetic hover
+   Ananta New Tab · macOS HIG quality
 ══════════════════════════════════════════════════════════════════════════ */
 
-/* ── Section container ──────────────────────────────────────────────────── */
+/* Section container */
 #topSitesArea {
   width: 100%;
   flex-shrink: 0;
-}
-
-/* ── Launchpad grid — columns set dynamically by JS (ceil(N/2) per row) ─── */
-.launchpad-grid {
-  display: grid;
-  /* grid-template-columns: set at runtime in topsites.js */
+  display: flex;
+  flex-direction: column;
   gap: var(--sp-2);
-  justify-items: center;
-  padding: var(--sp-3) var(--sp-4);
-  background: var(--color-accent);
-  border: none;
-  box-shadow:
-    0 4px 24px rgba(0, 122, 255, 0.28),
-    0 1px 4px rgba(0, 0, 0, 0.12);
-  border-radius: var(--radius-xl);
-  /* Magnetic hover: JS writes --tx, --ty per item via CSS custom props */
 }
 
-/* ── Skeleton item (direct grid child, no wrapper) ──────────────────────── */
-.lp-skeleton-item {
+/* Outer glass card — clips scroll track */
+.lp-outer {
   width: 100%;
-  height: 68px;
-  border-radius: var(--radius-md);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
 }
 
-/* ── Site card ──────────────────────────────────────────────────────────── */
+/* Scroll track — single flex row, scroll-snap */
+.lp-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+  transform: translateZ(0);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lp-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* One page = exactly 100% of track width */
+.lp-page {
+  flex: 0 0 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-evenly;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding: var(--sp-3) var(--sp-2);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Site card */
 .lp-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--sp-2);
+  gap: var(--sp-1);
   padding: var(--sp-2) var(--sp-1);
   border-radius: var(--radius-lg);
   text-decoration: none;
   color: var(--color-text-primary);
-  width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
   max-width: 88px;
   cursor: pointer;
   transform: translateZ(0);
   will-change: transform;
-
-  /* Spring physics transition — hover + magnetic */
   transition:
-    transform 220ms var(--spring-decelerate),
-    background 120ms var(--spring-decelerate);
-
-  /* Animate in staggered */
+    transform 220ms var(--ease-out),
+    background 120ms var(--ease-out);
   opacity: 0;
-  animation: lp-appear 320ms var(--spring-decelerate) forwards;
+  animation: lp-appear 320ms var(--ease-decelerate) forwards;
 }
 
 @keyframes lp-appear {
@@ -69,27 +95,25 @@
   }
 }
 
-/* Hover: spring lift */
 .lp-item:hover {
-  transform: translateZ(0) translateY(-5px) scale(1.09);
-  background: var(--color-surface-hover);
+  transform: translateZ(0) translateY(-4px) scale(1.09);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-/* Press: spring compress */
 .lp-item:active {
   transform: translateZ(0) scale(0.93);
   transition-duration: 90ms;
 }
 
-/* Magnetic displacement applied by JS via style.transform directly */
+/* Magnetic: JS rAF drives transform */
 .lp-item.is-magnetic {
-  transition: none; /* JS rAF handles movement so disable CSS transition */
+  transition: none;
 }
 
-/* ── Site icon wrapper ──────────────────────────────────────────────────── */
+/* Icon wrapper */
 .lp-icon-wrap {
-  width: 48px;
-  height: 48px;
+  width: 46px;
+  height: 46px;
   border-radius: var(--radius-md);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -99,7 +123,7 @@
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  transition: box-shadow 220ms var(--spring-decelerate);
+  transition: box-shadow 200ms var(--ease-out);
 }
 
 .lp-item:hover .lp-icon-wrap {
@@ -107,14 +131,14 @@
 }
 
 .lp-favicon {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
   display: block;
 }
 
-/* ── Letter badge fallback ──────────────────────────────────────────────── */
+/* Letter badge fallback */
 .lp-letter {
   width: 100%;
   height: 100%;
@@ -129,216 +153,87 @@
   background: var(--color-accent);
 }
 
-/* ── Site name label ────────────────────────────────────────────────────── */
+/* Site name */
 .lp-title {
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-text-secondary);
   text-align: center;
   line-height: 1.3;
-  max-width: 76px;
+  width: 100%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   pointer-events: none;
 }
 
-/* ── Skeleton loader row ─────────────────────────────────────────────────── */
-.lp-skeleton-row {
-  grid-column: 1 / -1;
+/* Pagination dots */
+.lp-pagination {
   display: flex;
-  gap: var(--sp-3);
-  padding: var(--sp-2);
-  overflow: hidden;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 2px 0 var(--sp-1);
 }
 
+.lp-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition:
+    width 200ms var(--ease-out),
+    opacity 200ms var(--ease-out),
+    background 200ms var(--ease-out);
+}
+
+.lp-dot--active {
+  width: 18px;
+  opacity: 1;
+  background: var(--color-accent);
+}
+
+.lp-dot:hover:not(.lp-dot--active) {
+  opacity: 0.7;
+}
+
+/* Skeleton (shown before JS) */
 .lp-skeleton-item {
-  width: 48px;
-  height: 68px;
+  width: 46px;
+  height: 66px;
   border-radius: var(--radius-md);
   flex-shrink: 0;
 }
 
-/* ── Empty state ─────────────────────────────────────────────────────────── */
+/* Empty state */
 .lp-empty {
-  grid-column: 1 / -1;
   padding: var(--sp-8) var(--sp-4);
   text-align: center;
   color: var(--color-text-tertiary);
   font-size: 13px;
 }
 
-/* ── Launchpad grid ─────────────────────────────────────────────────────── */
-.launchpad-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
-  gap: var(--sp-2);
-  justify-items: center;
-  padding: var(--sp-4);
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--glass-border);
-  box-shadow: var(--glass-shadow);
-  border-radius: var(--radius-xl);
-}
-
-/* ── Site card ──────────────────────────────────────────────────────────── */
-.lp-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--sp-2);
-  padding: var(--sp-3) var(--sp-2);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: var(--color-text-primary);
-  width: 100%;
-  max-width: 96px;
-  cursor: pointer;
-  transition:
-    transform var(--dur-normal) var(--ease-spring),
-    background var(--dur-fast) var(--ease-out);
-
-  /* Animate in */
-  opacity: 0;
-  animation: lp-appear var(--dur-slow) var(--ease-decelerate) forwards;
-}
-
-@keyframes lp-appear {
-  from {
-    opacity: 0;
-    transform: scale(0.8) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.lp-item:hover {
-  transform: translateY(-4px) scale(1.08);
-  background: rgba(255, 255, 255, 0.12);
-}
-
-.lp-item:active {
-  transform: scale(0.94);
-  transition-duration: var(--dur-fast);
-}
-
-/* ── Site icon wrapper ──────────────────────────────────────────────────── */
-.lp-icon-wrap {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  transition: box-shadow var(--dur-fast) var(--ease-out);
-}
-
-.lp-item:hover .lp-icon-wrap {
-  box-shadow: var(--shadow-md);
-}
-
-.lp-favicon {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
-  display: block;
-}
-
-/* ── Letter badge fallback ──────────────────────────────────────────────── */
-.lp-letter {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
-  font-weight: 700;
-  text-transform: uppercase;
-  border-radius: inherit;
-  color: #fff;
-  /* Domain-based color is injected as inline background-color via JS */
-  background: var(--color-accent);
-}
-
-/* ── Site name label ────────────────────────────────────────────────────── */
-.lp-title {
-  font-size: 11px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.85);
-  text-align: center;
-  line-height: 1.3;
-  max-width: 80px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-
-/* ── Skeleton loader row ─────────────────────────────────────────────────── */
-.lp-skeleton-row {
-  grid-column: 1 / -1;
-  display: flex;
-  gap: var(--sp-3);
-  padding: var(--sp-3);
-}
-
-.lp-skeleton-item {
-  width: 52px;
-  height: 72px;
-  border-radius: var(--radius-md);
-  flex-shrink: 0;
-}
-
-/* ── Empty state ─────────────────────────────────────────────────────────── */
-.lp-empty {
-  grid-column: 1 / -1;
-  padding: var(--sp-12) var(--sp-5);
-  text-align: center;
-  color: var(--color-text-tertiary);
-  font-size: 14px;
-}
-
-/* ── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .launchpad-grid {
-    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-    gap: var(--sp-1);
-    padding: var(--sp-3);
-  }
-
-  .lp-item {
-    max-width: 84px;
-    padding: var(--sp-2) var(--sp-1);
-  }
-
+/* Responsive */
+@media (max-width: 900px) {
   .lp-icon-wrap {
-    width: 46px;
-    height: 46px;
+    width: 40px;
+    height: 40px;
   }
 
   .lp-favicon {
-    width: 28px;
-    height: 28px;
-  }
-}
-
-@media (max-width: 480px) {
-  .launchpad-grid {
-    grid-template-columns: repeat(5, 1fr);
+    width: 22px;
+    height: 22px;
   }
 
   .lp-item {
-    max-width: none;
-    width: 100%;
+    max-width: 72px;
   }
 }
+
+/* ── Skeleton item (direct grid child, no wrapper) ──────────────────────── */
