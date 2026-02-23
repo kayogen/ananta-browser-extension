@@ -60,29 +60,91 @@ function _flattenNode(node, out) {
   if (node.children) node.children.forEach((c) => _flattenNode(c, out));
 }
 
-/* ── Find the Bookmarks Toolbar node in the tree ───────────────────────────── */
-function _findToolbarNode(tree) {
+/* ── Detect whether the tree comes from a Chromium-based browser ────────────
+   Chromium (Chrome / Edge / Brave) annotates nodes with a `folderType` field.
+   Firefox and Safari do not.                                                 */
+function _isChromiumTree(tree) {
   for (const root of tree) {
-    if (!root.children) continue;
-    for (const child of root.children) {
-      const t = (child.title || "").toLowerCase();
-      // Chrome: "Bookmarks bar" (id:"1") — Firefox: "Bookmarks Toolbar" (id:"toolbar_____")
-      if (
-        t === "bookmarks bar" ||
-        t === "bookmarks toolbar" ||
-        child.id === "1" ||
-        child.id === "toolbar_____"
-      ) {
-        return child;
-      }
+    if (root.folderType !== undefined) return true;
+    for (const child of root.children || []) {
+      if (child.folderType !== undefined) return true;
     }
   }
+  return false;
+}
+
+/* ── Find the primary root container for each browser ──────────────────────
+   Priority / mapping:
+     Firefox  → "Bookmarks Toolbar"  (id "toolbar_____")
+     Chrome / Edge / Brave → "Other bookmarks" (folderType "other")
+       — this is where users actually organise their bookmark folders.
+       — "Bookmarks bar" is the secondary preference if "Other" is empty.
+     Safari   → "Bookmarks Menu"  (standard WebExtension folder name)
+       — falls back to "Favorites" if Bookmarks Menu is empty/absent.     */
+function _findToolbarNode(tree) {
+  const isChromium = _isChromiumTree(tree);
+
+  // ── Firefox ──────────────────────────────────────────────────────────────
+  if (!isChromium) {
+    // 1. Exact Firefox id (most reliable)
+    for (const root of tree) {
+      for (const child of root.children || []) {
+        if (child.id === "toolbar_____") return child;
+      }
+    }
+    // 2. Title match: "Bookmarks Toolbar" (Firefox) or "Bookmarks Menu" (Safari)
+    for (const root of tree) {
+      for (const child of root.children || []) {
+        const t = (child.title || "").toLowerCase();
+        if (t === "bookmarks toolbar") return child;
+      }
+    }
+    // 3. Safari: "Bookmarks Menu" then "Favorites"
+    let favorites = null;
+    for (const root of tree) {
+      for (const child of root.children || []) {
+        const t = (child.title || "").toLowerCase();
+        if (t === "bookmarks menu") return child;
+        if (t === "favorites") favorites = child;
+      }
+    }
+    if (favorites) return favorites;
+  }
+
+  // ── Chromium (Chrome / Edge / Brave) ─────────────────────────────────────
+  // Prefer "Other bookmarks" — that is where real folder structure lives.
+  let bookmarksBar = null;
+  for (const root of tree) {
+    for (const child of root.children || []) {
+      if (child.folderType === "other") return child;
+      if (child.folderType === "bookmarks-bar") bookmarksBar = child;
+    }
+  }
+  // Title-based fallback (in case folderType is absent on older builds)
+  for (const root of tree) {
+    for (const child of root.children || []) {
+      const t = (child.title || "").toLowerCase();
+      if (t === "other bookmarks") return child;
+    }
+  }
+  // Secondary: Bookmarks bar / toolbar (Chromium)
+  if (bookmarksBar) return bookmarksBar;
+  for (const root of tree) {
+    for (const child of root.children || []) {
+      const t = (child.title || "").toLowerCase();
+      if (t === "bookmarks bar" || t === "bookmarks toolbar") return child;
+    }
+  }
+
   return null;
 }
 
-/* ── Extract root folders — prefer Bookmarks Toolbar children ──────────────── */
+/* ── Extract root folders from the primary container ───────────────────────
+   Firefox  → sub-folders of "Bookmarks Toolbar"
+   Chrome / Edge / Brave → sub-folders of "Other bookmarks"
+   Safari   → sub-folders of "Bookmarks Menu" / "Favorites"               */
 function _extractRoots(tree) {
-  // First try: sub-folders of the Bookmarks Toolbar
+  // First try: sub-folders of the browser's primary bookmark container
   const toolbar = _findToolbarNode(tree);
   if (toolbar && toolbar.children) {
     const folders = toolbar.children.filter((c) => Array.isArray(c.children));
@@ -381,6 +443,7 @@ async function initBookmarks() {
 
   _loadPrefs();
   const rawTree = await _fetchBmTree();
+  console.log(rawTree, "raw bookmark tree");
 
   if (!rawTree.length) {
     treeEl.innerHTML = '<div class="bm-empty">Bookmarks unavailable.</div>';
