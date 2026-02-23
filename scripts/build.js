@@ -76,8 +76,9 @@ function firefoxManifest(base) {
   // Ensure gecko ID is present (required for AMO submission)
   m.browser_specific_settings = m.browser_specific_settings || {};
   m.browser_specific_settings.gecko = {
+    ...(m.browser_specific_settings.gecko || {}),
     id: "ananta@kayogen",
-    strict_min_version: "109.0",
+    strict_min_version: "142.0",
   };
 
   return m;

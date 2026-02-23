@@ -34,6 +34,11 @@ const _db = {
 let $overlay, $panel, $grid, $settingsBtn, $searchInput;
 let $dialog, $dialogUrl, $dialogName, $dialogSave, $dialogCancel, $dialogClose;
 
+function _svgNode(svgString) {
+  return new DOMParser().parseFromString(svgString, "image/svg+xml")
+    .documentElement;
+}
+
 function _buildIconImg(app) {
   const hostname = (() => {
     try {
@@ -99,7 +104,7 @@ function _buildAddTile() {
 
   const iconWrap = document.createElement("div");
   iconWrap.className = "db-app-icon-wrap db-add-icon-wrap";
-  iconWrap.innerHTML = _DB_SVG_PLUS;
+  iconWrap.appendChild(_svgNode(_DB_SVG_PLUS));
 
   const label = document.createElement("span");
   label.className = "db-app-label";
@@ -121,7 +126,7 @@ function _buildTile(app) {
   const minusBtn = document.createElement("button");
   minusBtn.className = "db-tile-remove";
   minusBtn.setAttribute("aria-label", `Remove ${app.name}`);
-  minusBtn.innerHTML = _DB_SVG_MINUS;
+  minusBtn.appendChild(_svgNode(_DB_SVG_MINUS));
   minusBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     _handleRemove(app.id, tile);
@@ -155,19 +160,28 @@ function _getAddTile() {
 function _buildEmptyState(query) {
   const el = document.createElement("div");
   el.className = "db-empty-state";
+
+  const iconDiv = document.createElement("div");
+  iconDiv.className = "db-empty-icon";
+  iconDiv.appendChild(_svgNode(_DB_SVG_GRID));
+
+  const title = document.createElement("p");
+  title.className = "db-empty-title";
+
+  const sub = document.createElement("p");
+  sub.className = "db-empty-sub";
+
   if (query) {
-    el.innerHTML = `
-      <div class="db-empty-icon">${_DB_SVG_GRID}</div>
-      <p class="db-empty-title">No Results</p>
-      <p class="db-empty-sub">No apps match "<strong>${query}</strong>".</p>
-    `;
+    title.textContent = "No Results";
+    sub.textContent = `No apps match "${query}".`;
   } else {
-    el.innerHTML = `
-      <div class="db-empty-icon">${_DB_SVG_GRID}</div>
-      <p class="db-empty-title">No Pinned Apps</p>
-      <p class="db-empty-sub">Click the settings icon then <strong>+</strong> to add your first app.</p>
-    `;
+    title.textContent = "No Pinned Apps";
+    sub.textContent = "Click the settings icon then + to add your first app.";
   }
+
+  el.appendChild(iconDiv);
+  el.appendChild(title);
+  el.appendChild(sub);
   return el;
 }
 
@@ -244,11 +258,19 @@ function _filterGrid(query) {
       $grid.appendChild(_buildEmptyState(query.trim()));
     } else {
       emptyState.style.display = "";
-      emptyState.innerHTML = `
-        <div class="db-empty-icon">${_DB_SVG_GRID}</div>
-        <p class="db-empty-title">No Results</p>
-        <p class="db-empty-sub">No apps match "<strong>${query.trim()}</strong>".</p>
-      `;
+      emptyState.replaceChildren();
+      const iconDiv = document.createElement("div");
+      iconDiv.className = "db-empty-icon";
+      iconDiv.appendChild(_svgNode(_DB_SVG_GRID));
+      const title = document.createElement("p");
+      title.className = "db-empty-title";
+      title.textContent = "No Results";
+      const sub = document.createElement("p");
+      sub.className = "db-empty-sub";
+      sub.textContent = `No apps match "${query.trim()}".`;
+      emptyState.appendChild(iconDiv);
+      emptyState.appendChild(title);
+      emptyState.appendChild(sub);
     }
   } else if (emptyState) {
     emptyState.style.display = "none";
@@ -277,7 +299,9 @@ function _handleRemove(id, tile) {
 function _toggleEditMode() {
   _db.isEditMode = !_db.isEditMode;
 
-  $settingsBtn.innerHTML = _db.isEditMode ? _DB_SVG_DONE : _DB_SVG_GEAR;
+  $settingsBtn.replaceChildren(
+    _svgNode(_db.isEditMode ? _DB_SVG_DONE : _DB_SVG_GEAR),
+  );
   $settingsBtn.setAttribute("aria-label", _db.isEditMode ? "Done" : "Settings");
   $settingsBtn.classList.toggle("is-done", _db.isEditMode);
 
@@ -439,6 +463,6 @@ function initDashboard() {
 
   document.addEventListener("keydown", _onKeyDown);
 
-  openBtn.innerHTML = _DB_SVG_GRID;
-  $settingsBtn.innerHTML = _DB_SVG_GEAR;
+  openBtn.appendChild(_svgNode(_DB_SVG_GRID));
+  $settingsBtn.appendChild(_svgNode(_DB_SVG_GEAR));
 }
