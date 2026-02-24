@@ -175,7 +175,6 @@ async function _handleSync() {
   if (_stg.syncing) return;
   if (!_stg.authState || !_stg.authState.accessToken) return;
 
-  // Check that AnantaSync module is available
   if (typeof AnantaSync === "undefined") {
     console.warn("[Ananta/settings] Sync module not loaded.");
     return;
@@ -183,30 +182,35 @@ async function _handleSync() {
 
   _stg.syncing = true;
 
-  // Update sync button UI
   const badge = $syncBtn.querySelector(".stg-badge");
-  const origText = badge ? badge.textContent : "";
   if (badge) {
     badge.textContent = "Syncing…";
     badge.style.opacity = "1";
   }
 
   try {
-    await AnantaSync.push();
+    const result = await AnantaSync.smartSync();
+    const pulledCount = result.pulled?.length || 0;
+    const pushedCount = result.pushed?.length || 0;
+    const conflictCount = result.conflicts?.length || 0;
 
     if (badge) {
       badge.textContent = "Done!";
       setTimeout(() => {
-        badge.textContent = origText || "Sync";
+        badge.textContent = "Sync";
         badge.style.opacity = "";
       }, 2000);
+    }
+
+    if (pulledCount > 0 || conflictCount > 0) {
+      setTimeout(() => location.reload(), 2200);
     }
   } catch (err) {
     console.error("[Ananta/settings] Sync failed:", err);
     if (badge) {
       badge.textContent = "Failed";
       setTimeout(() => {
-        badge.textContent = origText || "Sync";
+        badge.textContent = "Sync";
         badge.style.opacity = "";
       }, 2000);
     }
@@ -312,14 +316,6 @@ function _listenStorageChanges() {
       const newVal = changes[STG_AUTH_KEY].newValue || false;
       _stg.authState = newVal;
       _renderAuthState(newVal);
-
-      // If we just got authenticated, update the sync badge
-      if (newVal && $syncBtn) {
-        const badge = $syncBtn.querySelector(".stg-badge");
-        if (badge && badge.textContent === "Coming soon") {
-          badge.textContent = "Sync";
-        }
-      }
     });
   }
 
@@ -388,4 +384,10 @@ function initSettings() {
 
   /* Listen for auth changes from other tabs / background */
   _listenStorageChanges();
+
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg?.type === "ANANTA_BG_SYNC_TICK" && _stg.authState?.accessToken) {
+      _handleSync();
+    }
+  });
 }
