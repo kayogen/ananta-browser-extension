@@ -6,7 +6,6 @@
   "author": "KayoGen",
 
   "permissions": [
-    "alarms",
     "bookmarks",
     "history",
     "topSites",

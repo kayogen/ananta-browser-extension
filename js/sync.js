@@ -13,7 +13,12 @@ const AnantaSync = (() => {
     "top_sites",
     "device_info",
   ];
-  const LOCAL_STORABLE = ["pinned_apps", "world_clocks", "settings"];
+  const LOCAL_STORABLE = [
+    "pinned_apps",
+    "world_clocks",
+    "settings",
+    "top_sites",
+  ];
 
   function detectBrowser() {
     const ua = navigator.userAgent;
@@ -252,6 +257,17 @@ const AnantaSync = (() => {
     });
   }
 
+  function readLocalTopSites() {
+    try {
+      const raw = localStorage.getItem("anantaTopSites");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  }
+
   function clearLocal(dataType) {
     switch (dataType) {
       case "pinned_apps":
@@ -264,6 +280,9 @@ const AnantaSync = (() => {
         localStorage.removeItem("ananta-fmt-24h");
         localStorage.removeItem("selectedBookmarkFolder");
         localStorage.removeItem("openBookmarkFolders");
+        break;
+      case "top_sites":
+        localStorage.removeItem("anantaTopSites");
         break;
     }
   }
@@ -295,6 +314,9 @@ const AnantaSync = (() => {
             );
         }
         break;
+      case "top_sites":
+        localStorage.setItem("anantaTopSites", JSON.stringify(item.data));
+        break;
     }
   }
 
@@ -314,7 +336,14 @@ const AnantaSync = (() => {
     ]);
     if (bookmarks) allLocal.push({ dataType: "bookmarks", data: bookmarks });
     if (history) allLocal.push({ dataType: "history", data: history });
-    if (topSites) allLocal.push({ dataType: "top_sites", data: topSites });
+    allLocal.push({
+      dataType: "top_sites",
+      data: {
+        browserTopSites: topSites || [],
+        historyHints: history || [],
+        localTopSites: readLocalTopSites(),
+      },
+    });
     allLocal.push({ dataType: "device_info", data: collectDeviceInfo() });
 
     const localMap = {};
@@ -345,7 +374,7 @@ const AnantaSync = (() => {
       const server = serverMap[dt];
       const known = meta[dt] || {};
 
-      if (dt === "device_info") {
+      if (dt === "device_info" || dt === "top_sites") {
         toPush.push({
           dataType: dt,
           data: local.data,
@@ -401,6 +430,14 @@ const AnantaSync = (() => {
           results.pushed.push(r.dataType);
         } else if (r.status === "unchanged") {
           results.unchanged.push(r.dataType);
+        }
+        if (r.serverData && LOCAL_STORABLE.includes(r.dataType)) {
+          applyToLocal({ dataType: r.dataType, data: r.serverData });
+          meta[r.dataType] = {
+            version: r.syncVersion,
+            checksum: await computeChecksum(r.serverData),
+          };
+          if (!unchanged.includes(r.dataType)) unchanged.push(r.dataType);
         }
       }
     }
@@ -468,7 +505,14 @@ const AnantaSync = (() => {
     ]);
     if (bookmarks) items.push({ dataType: "bookmarks", data: bookmarks });
     if (history) items.push({ dataType: "history", data: history });
-    if (topSites) items.push({ dataType: "top_sites", data: topSites });
+    items.push({
+      dataType: "top_sites",
+      data: {
+        browserTopSites: topSites || [],
+        historyHints: history || [],
+        localTopSites: readLocalTopSites(),
+      },
+    });
     items.push({ dataType: "device_info", data: collectDeviceInfo() });
 
     const withVersions = await Promise.all(
@@ -489,11 +533,7 @@ const AnantaSync = (() => {
       if (r.syncVersion) {
         meta[r.dataType] = { version: r.syncVersion, checksum: r.checksum };
       }
-      if (
-        r.status === "conflict" &&
-        r.serverData &&
-        LOCAL_STORABLE.includes(r.dataType)
-      ) {
+      if (r.serverData && LOCAL_STORABLE.includes(r.dataType)) {
         applyToLocal({ dataType: r.dataType, data: r.serverData });
       }
     }

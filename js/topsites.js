@@ -164,11 +164,34 @@ function _startMagneticLoop(outerEl) {
 }
 
 /* ── Init ───────────────────────────────────────────────────────────────── */
+const TS_STORAGE_KEY = "anantaTopSites";
+
+function _readStoredTopSites() {
+  try {
+    const raw = localStorage.getItem(TS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return null;
+}
+
+function _writeStoredTopSites(sites) {
+  try {
+    localStorage.setItem(TS_STORAGE_KEY, JSON.stringify(sites));
+  } catch {}
+}
+
 async function initTopSites() {
   const section = document.getElementById("topSitesArea");
   if (!section) return [];
 
-  const sites = await _fetchTopSites();
+  let sites = _readStoredTopSites();
+  if (!sites) {
+    sites = await _fetchTopSites();
+    if (sites.length > 0) _writeStoredTopSites(sites);
+  }
 
   // Clear skeleton placeholder
   section.replaceChildren();

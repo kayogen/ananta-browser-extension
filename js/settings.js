@@ -384,10 +384,4 @@ function initSettings() {
 
   /* Listen for auth changes from other tabs / background */
   _listenStorageChanges();
-
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg?.type === "ANANTA_BG_SYNC_TICK" && _stg.authState?.accessToken) {
-      _handleSync();
-    }
-  });
 }

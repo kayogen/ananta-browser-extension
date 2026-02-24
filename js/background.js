@@ -80,21 +80,6 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
    2.  runtime.onMessage — handle messages from content scripts
 ══════════════════════════════════════════════════════════════════════════ */
 
-const SYNC_ALARM_NAME = "anantaPeriodicSync";
-const SYNC_INTERVAL_MINUTES = 10;
-
-chrome.alarms.create(SYNC_ALARM_NAME, {
-  periodInMinutes: SYNC_INTERVAL_MINUTES,
-});
-
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name !== SYNC_ALARM_NAME) return;
-  chrome.storage.local.get(BG_AUTH_KEY, (res) => {
-    if (!res[BG_AUTH_KEY]?.accessToken) return;
-    chrome.runtime.sendMessage({ type: "ANANTA_BG_SYNC_TICK" }).catch(() => {});
-  });
-});
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.type !== "string") return;
 
