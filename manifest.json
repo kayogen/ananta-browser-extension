@@ -5,9 +5,35 @@
   "description": "A beautiful, privacy-first new tab page with bookmarks, top sites, and history.",
   "author": "KayoGen",
 
-  "permissions": ["bookmarks", "history", "topSites"],
+  "permissions": [
+    "bookmarks",
+    "history",
+    "topSites",
+    "storage",
+    "tabs",
+    "scripting"
+  ],
 
-  "host_permissions": ["https://nominatim.openstreetmap.org/*"],
+  "host_permissions": [
+    "https://nominatim.openstreetmap.org/*",
+    "http://localhost:8080/*",
+    "http://127.0.0.1:8080/*"
+  ],
+
+  "background": {
+    "scripts": ["js/background.js"]
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost:8080/ananta/*",
+        "http://127.0.0.1:8080/ananta/*"
+      ],
+      "js": ["js/content.js"],
+      "run_at": "document_start"
+    }
+  ],
 
   "chrome_url_overrides": {
     "newtab": "index.html"
@@ -40,6 +66,6 @@
   },
 
   "content_security_policy": {
-    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src https://nominatim.openstreetmap.org"
+    "extension_pages": "default-src 'self'; img-src 'self' chrome://favicon/ chrome://favicon2/ https://www.google.com https://icons.duckduckgo.com data: blob: https:; style-src 'self'; font-src 'self'; script-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org https://devstack-api-dfn8.onrender.com http://localhost:8080 http://127.0.0.1:8080"
   }
 }

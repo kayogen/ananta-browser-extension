@@ -29,6 +29,7 @@ async function boot() {
   const t0 = performance.now();
   // ── Phase 0: synchronous UI widgets ───────────────────────────────────────
   initDashboard(); // pinned apps dashboard (no async needed)
+  initSettings(); // settings gear button & menu
   // ── Phase 1: synchronous — clocks start via rAF immediately ──────────────
   initClocks();
   initWorldClocks(); // dynamic world clock system (storage + render + tick)

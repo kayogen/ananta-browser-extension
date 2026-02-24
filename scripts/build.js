@@ -35,6 +35,11 @@ function chromeManifest(base) {
   // Chrome Web Store / Brave / Edge: no gecko-specific block
   delete m.browser_specific_settings;
 
+  // Chrome MV3 uses service_worker instead of scripts for background
+  if (m.background && m.background.scripts) {
+    m.background = { service_worker: m.background.scripts[0] };
+  }
+
   // Must use PNG icons — SVG is rejected by Chrome's validator
   m.icons = {
     16: "assets/icons/png/icon16.png",
@@ -137,6 +142,57 @@ function checkPNGs() {
   }
 }
 
+// ── Production URL substitution ─────────────────────────────────────────────
+
+const DEV_ORIGIN = "http://localhost:8080";
+const DEV_ORIGIN_ALT = "http://127.0.0.1:8080";
+const PROD_ORIGIN = "https://devstack-api-dfn8.onrender.com";
+
+/** Replace all dev-origin references in a text file in-place. */
+function productionizeFile(filePath) {
+  let src = fs.readFileSync(filePath, "utf8");
+  if (!src.includes(DEV_ORIGIN) && !src.includes(DEV_ORIGIN_ALT)) return;
+  src = src.replaceAll(DEV_ORIGIN, PROD_ORIGIN);
+  src = src.replaceAll(DEV_ORIGIN_ALT, PROD_ORIGIN);
+  fs.writeFileSync(filePath, src, "utf8");
+}
+
+/** Walk a directory and productionize every .js file found. */
+function productionizeJsFiles(dir) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      productionizeJsFiles(full);
+    } else if (entry.isFile() && entry.name.endsWith(".js")) {
+      productionizeFile(full);
+    }
+  }
+}
+
+/** Replace dev origins in manifest host_permissions, content_scripts, and CSP. */
+function productionizeManifest(m) {
+  m = JSON.parse(JSON.stringify(m)); // deep clone
+  const replaceOrigin = (s) =>
+    s.replace(DEV_ORIGIN, PROD_ORIGIN).replace(DEV_ORIGIN_ALT, PROD_ORIGIN);
+
+  if (m.host_permissions) {
+    // Replace dev origins and deduplicate
+    m.host_permissions = [...new Set(m.host_permissions.map(replaceOrigin))];
+  }
+  if (m.content_scripts) {
+    m.content_scripts = m.content_scripts.map((cs) => ({
+      ...cs,
+      matches: [...new Set(cs.matches.map(replaceOrigin))],
+    }));
+  }
+  if (m.content_security_policy?.extension_pages) {
+    m.content_security_policy.extension_pages = replaceOrigin(
+      m.content_security_policy.extension_pages,
+    );
+  }
+  return m;
+}
+
 // ── Build ────────────────────────────────────────────────────────────────────
 
 async function buildTarget(name, config) {
@@ -156,8 +212,11 @@ async function buildTarget(name, config) {
     }
   }
 
-  // Write browser-specific manifest
-  const manifest = config.manifest(BASE_MANIFEST);
+  // Replace dev URLs with production URLs in all copied JS files
+  productionizeJsFiles(outDir);
+
+  // Write browser-specific manifest (with production URLs)
+  const manifest = productionizeManifest(config.manifest(BASE_MANIFEST));
   fs.writeFileSync(
     path.join(outDir, "manifest.json"),
     JSON.stringify(manifest, null, 2),

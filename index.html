@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="css/worldClocks.css" />
     <link rel="stylesheet" href="css/citySearch.css" />
     <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/settings.css" />
   </head>
   <body>
     <!-- ── Dashboard open button (fixed top-left) ─────────────────────── -->
@@ -25,6 +26,186 @@
       aria-label="Dashboard — Pinned Apps"
       title="Dashboard"
     ></button>
+
+    <!-- ── Settings gear button (fixed bottom-right) ────────────────────── -->
+    <button
+      id="settingsOpenBtn"
+      aria-label="Settings"
+      title="Settings"
+      aria-haspopup="dialog"
+      aria-expanded="false"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+        width="18"
+        height="18"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M8.34 1.804A1 1 0 019.32 1h1.36a1 1 0 01.98.804l.295 1.473c.497.144.971.342 1.416.587l1.25-.834a1 1 0 011.262.125l.962.962a1 1 0 01.125 1.262l-.834 1.25c.245.445.443.919.587 1.416l1.473.294a1 1 0 01.804.98v1.361a1 1 0 01-.804.98l-1.473.295a6.95 6.95 0 01-.587 1.416l.834 1.25a1 1 0 01-.125 1.262l-.962.962a1 1 0 01-1.262.125l-1.25-.834a6.953 6.953 0 01-1.416.587l-.294 1.473a1 1 0 01-.98.804H9.32a1 1 0 01-.98-.804l-.295-1.473a6.957 6.957 0 01-1.416-.587l-1.25.834a1 1 0 01-1.262-.125l-.962-.962a1 1 0 01-.125-1.262l.834-1.25a6.957 6.957 0 01-.587-1.416l-1.473-.294A1 1 0 011 10.68V9.32a1 1 0 01.804-.98l1.473-.295c.144-.497.342-.971.587-1.416l-.834-1.25a1 1 0 01.125-1.262l.962-.962A1 1 0 014.38 3.03l1.25.834a6.957 6.957 0 011.416-.587l.294-1.473zM13 10a3 3 0 11-6 0 3 3 0 016 0z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </button>
+
+    <!-- ── Settings menu panel ──────────────────────────────────────────── -->
+    <div
+      id="settingsMenu"
+      role="dialog"
+      aria-label="Settings"
+      aria-modal="true"
+      aria-hidden="true"
+    >
+      <!-- Header -->
+      <div class="stg-header">
+        <span class="stg-title">Settings</span>
+        <button
+          id="settingsCloseBtn"
+          class="stg-close-btn"
+          aria-label="Close settings"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+            width="14"
+            height="14"
+          >
+            <path
+              d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- User info row (shown when logged in) -->
+      <div id="stgUserRow" class="stg-user-row" hidden>
+        <div class="stg-avatar" aria-hidden="true" id="stgAvatar">A</div>
+        <div class="stg-user-info">
+          <span class="stg-user-name" id="stgUserName">Ananta User</span>
+          <span class="stg-user-email" id="stgUserEmail"></span>
+        </div>
+      </div>
+
+      <!-- Divider -->
+      <div class="stg-divider"></div>
+
+      <!-- Menu items -->
+      <ul class="stg-list" role="list">
+        <!-- Account Settings — logged-in only -->
+        <li class="stg-item stg-auth-only" id="stgAccountItem" hidden>
+          <button class="stg-btn" id="stgAccountBtn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              width="15"
+              height="15"
+            >
+              <path
+                d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z"
+              />
+            </svg>
+            Account Settings
+            <svg
+              class="stg-chevron"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              width="12"
+              height="12"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </li>
+
+        <!-- Sync — logged-in only -->
+        <li class="stg-item stg-auth-only" id="stgSyncItem" hidden>
+          <button class="stg-btn" id="stgSyncBtn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              width="15"
+              height="15"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M15.312 11.424a5.5 5.5 0 01-9.201 2.466l-.312-.311h2.433a.75.75 0 000-1.5H3.989a.75.75 0 00-.75.75v4.242a.75.75 0 001.5 0v-2.43l.31.31a7 7 0 0011.712-3.138.75.75 0 00-1.449-.39zm1.23-3.723a.75.75 0 00.219-.53V2.929a.75.75 0 00-1.5 0v2.43l-.31-.31A7 7 0 003.239 8.188a.75.75 0 101.448.389A5.5 5.5 0 0113.89 6.11l.311.31h-2.432a.75.75 0 000 1.5h4.243a.75.75 0 00.53-.219z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Sync
+            <span class="stg-badge">Coming soon</span>
+          </button>
+        </li>
+
+        <!-- Logout — logged-in only -->
+        <li class="stg-item stg-auth-only" id="stgLogoutItem" hidden>
+          <button class="stg-btn stg-btn-destructive" id="stgLogoutBtn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              width="15"
+              height="15"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z"
+                clip-rule="evenodd"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M19 10a.75.75 0 00-.75-.75H8.704l1.048-1.068a.75.75 0 10-1.056-1.066l-2.5 2.55a.75.75 0 000 1.066l2.5 2.55a.75.75 0 101.056-1.066L8.704 10.75H18.25A.75.75 0 0019 10z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Log out
+          </button>
+        </li>
+
+        <!-- Login — logged-out only -->
+        <li class="stg-item stg-guest-only" id="stgLoginItem">
+          <button class="stg-btn stg-btn-accent" id="stgLoginBtn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+              width="15"
+              height="15"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z"
+                clip-rule="evenodd"
+              />
+              <path
+                fill-rule="evenodd"
+                d="M16.75 10a.75.75 0 00-.75-.75H6.704l1.048-1.068a.75.75 0 10-1.056-1.066l-2.5 2.55a.75.75 0 000 1.066l2.5 2.55a.75.75 0 101.056-1.066L7.704 10.75H16a.75.75 0 00.75-.75z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            Log in to Ananta
+          </button>
+        </li>
+      </ul>
+    </div>
+    <!-- /#settingsMenu -->
 
     <!-- ══════════════════════════════════════════════════
          DASHBOARD MODAL — Pinned Apps
@@ -351,6 +532,8 @@
     <script src="js/bookmarks.js"></script>
     <script src="js/storage/appsStorage.js"></script>
     <script src="js/dashboard.js"></script>
+    <script src="js/sync.js"></script>
+    <script src="js/settings.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>
