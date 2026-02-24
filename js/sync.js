@@ -18,6 +18,7 @@ const AnantaSync = (() => {
     "world_clocks",
     "settings",
     "top_sites",
+    "bookmarks",
   ];
 
   function detectBrowser() {
@@ -205,23 +206,18 @@ const AnantaSync = (() => {
     return new Promise((resolve) => {
       if (!chrome?.bookmarks?.getTree) return resolve(null);
       chrome.bookmarks.getTree((tree) => {
-        const bookmarks = [];
-        function walk(nodes, path = "") {
-          for (const node of nodes) {
-            if (node.url) {
-              bookmarks.push({
-                title: node.title,
-                url: node.url,
-                dateAdded: node.dateAdded,
-                path,
-              });
-            }
-            if (node.children)
-              walk(node.children, path ? `${path}/${node.title}` : node.title);
+        function walkNode(node) {
+          const item = { title: node.title || "" };
+          if (node.dateAdded) item.dateAdded = node.dateAdded;
+          if (node.url) item.url = node.url;
+          if (node.children !== undefined) {
+            item.children = node.children.map(walkNode);
           }
+          return item;
         }
-        walk(tree);
-        resolve(bookmarks);
+        // tree[0] is the invisible root; its children are the real root folders
+        const roots = (tree[0]?.children || tree).map(walkNode);
+        resolve(roots);
       });
     });
   }
@@ -268,6 +264,17 @@ const AnantaSync = (() => {
     return [];
   }
 
+  function readLocalBookmarks() {
+    try {
+      const raw = localStorage.getItem("anantaBookmarks");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  }
+
   function clearLocal(dataType) {
     switch (dataType) {
       case "pinned_apps":
@@ -283,6 +290,9 @@ const AnantaSync = (() => {
         break;
       case "top_sites":
         localStorage.removeItem("anantaTopSites");
+        break;
+      case "bookmarks":
+        localStorage.removeItem("anantaBookmarks");
         break;
     }
   }
@@ -317,6 +327,9 @@ const AnantaSync = (() => {
       case "top_sites":
         localStorage.setItem("anantaTopSites", JSON.stringify(item.data));
         break;
+      case "bookmarks":
+        localStorage.setItem("anantaBookmarks", JSON.stringify(item.data));
+        break;
     }
   }
 
@@ -334,7 +347,13 @@ const AnantaSync = (() => {
       collectHistory(),
       collectTopSites(),
     ]);
-    if (bookmarks) allLocal.push({ dataType: "bookmarks", data: bookmarks });
+    allLocal.push({
+      dataType: "bookmarks",
+      data: {
+        browserBookmarks: bookmarks || [],
+        localBookmarks: readLocalBookmarks(),
+      },
+    });
     if (history) allLocal.push({ dataType: "history", data: history });
     allLocal.push({
       dataType: "top_sites",
@@ -374,7 +393,12 @@ const AnantaSync = (() => {
       const server = serverMap[dt];
       const known = meta[dt] || {};
 
-      if (dt === "device_info" || dt === "top_sites") {
+      if (
+        dt === "device_info" ||
+        dt === "top_sites" ||
+        dt === "bookmarks" ||
+        dt === "history"
+      ) {
         toPush.push({
           dataType: dt,
           data: local.data,
@@ -503,7 +527,13 @@ const AnantaSync = (() => {
       collectHistory(),
       collectTopSites(),
     ]);
-    if (bookmarks) items.push({ dataType: "bookmarks", data: bookmarks });
+    items.push({
+      dataType: "bookmarks",
+      data: {
+        browserBookmarks: bookmarks || [],
+        localBookmarks: readLocalBookmarks(),
+      },
+    });
     if (history) items.push({ dataType: "history", data: history });
     items.push({
       dataType: "top_sites",
